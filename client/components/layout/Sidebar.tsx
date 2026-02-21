@@ -1,9 +1,16 @@
 "use client";
 import Link from "next/link";
 import { Home, BookOpen, User, LogOut } from "lucide-react";
+import { JSX, ReactNode } from "react";
 
-export default function Sidebar() {
-  const menu = [
+type MenuItem = {
+  name: string;
+  icon: ReactNode;
+  path: string;
+};
+
+export default function Sidebar(): JSX.Element {
+  const menu: MenuItem[] = [
     { name: "Dashboard", icon: <Home size={20} />, path: "/student/dashboard" },
     { name: "Courses", icon: <BookOpen size={20} />, path: "/student/courses" },
     { name: "Profile", icon: <User size={20} />, path: "/student/profile" },
@@ -32,3 +39,4 @@ export default function Sidebar() {
     </div>
   );
 }
+
