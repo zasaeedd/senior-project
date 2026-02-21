@@ -1,0 +1,240 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+model User {
+  userId    Int      @id @default(autoincrement())
+  firstName   String
+  lastName    String
+  email       String   @unique
+  userName    String   @unique
+  password    String
+  role        String
+
+  student     Student?
+  instructor  Instructor?
+  quizzes     Quiz[]
+}
+
+
+model Student {
+  id        Int    @id @default(autoincrement())
+  major     String
+
+  userID    Int    @unique
+  user      User   @relation(fields: [userID], references: [userId])
+
+  streak Streak?
+  attempts  Attempt[]
+  enrollments Enrollment[]
+  badges StudentBadge[]
+  powerups StudentPowerUp[]
+
+}
+
+
+model Instructor {
+  id         Int    @id @default(autoincrement())
+  department String
+
+  userID     Int    @unique
+  user       User   @relation(fields: [userID], references: [userId])
+
+  section    Section[]
+}
+
+
+model Section {
+  id                Int    @id @default(autoincrement())
+  total_std         Int 
+
+  courseID          Int
+  course            Course   @relation(fields: [courseID], references: [id])
+
+  instructorID     Int   
+  instructor       Instructor   @relation(fields: [instructorID], references: [id])
+
+  quizzes          Quiz[]
+  enrollments      Enrollment[]
+
+}
+
+
+model Course {
+  id        Int     @id @default(autoincrement())
+  crs_name  String  @unique
+  crs_code  String  @unique
+  credits   Int 
+
+  sections Section[]
+  quizzes  Quiz[]
+}
+
+model Quiz {
+  id          Int    @id @default(autoincrement())
+  title       String
+  duration    Int
+  deadline    DateTime
+  created_at  DateTime
+  source_type String
+
+  courseID      Int
+  course        Course   @relation(fields: [courseID], references: [id])
+
+  userID        Int    
+  user          User   @relation(fields: [userID], references: [userId])
+
+  sectionID     Int    
+  section       Section   @relation(fields: [sectionID], references: [id])
+
+  questions     Question[]
+  attempst      Attempt[]
+}
+
+model Question {
+  id          Int    @id @default(autoincrement())
+  text        String 
+  type        String
+  points      Int
+  difficulty  String
+
+  quizID      Int    
+  quiz        Quiz   @relation(fields: [quizID], references: [id])
+
+  choices     Choice[]
+  studentAnswers StudentAnswer[]
+}
+
+
+model Enrollment {
+  @@id([studentID,sectionID])
+  status  String
+  xp      Int
+
+  studentID     Int   
+  student       Student   @relation(fields: [studentID], references: [id])
+
+  sectionID     Int    
+  section       Section   @relation(fields: [sectionID], references: [id])
+
+}
+
+
+model Choice {
+  id            Int  @id @default(autoincrement())
+  text          String
+  is_correct    Boolean
+  
+  questionID    Int    
+  question      Question   @relation(fields: [questionID], references: [id])
+
+  studentAnswers StudentAnswer[]
+}
+
+
+model StudentAnswer {
+  id                Int  @id @default(autoincrement())
+  selected_ans_id   Int
+  short_text_ans    String?
+  is_correct        Boolean
+  time_taken        Int
+  feedback          String
+
+  attemptID         Int   
+  attempt           Attempt   @relation(fields: [attemptID], references: [id])
+
+  questionID        Int    
+  question          Question   @relation(fields: [questionID], references: [id])
+
+  selected_choiceID Int?
+  choice            Choice?    @relation(fields: [selected_choiceID], references: [id])
+
+}
+
+
+model Attempt {
+  id            Int  @id @default(autoincrement())
+  start_time    Int
+  end_time      Int
+  score         Int
+  submitted_at  DateTime
+
+  studentID     Int   
+  student       Student   @relation(fields: [studentID], references: [id])
+
+  quizID        Int    
+  quiz          Quiz   @relation(fields: [quizID], references: [id])
+
+  studentAnswers StudentAnswer[]
+}
+
+model Badge {
+  id                Int  @id @default(autoincrement())
+  name              String
+  description       String
+  unlock_condition  String
+
+  badges StudentBadge[]
+
+}
+
+model StudentBadge {
+  id                Int  @id @default(autoincrement())
+
+  earned_at  DateTime
+
+  studentID     Int   
+  student       Student   @relation(fields: [studentID], references: [id])
+
+  badgeID     Int   
+  badge       Badge   @relation(fields: [badgeID], references: [id])
+
+  @@unique([studentID,badgeID])
+}
+
+model PowerUp {
+  id                Int  @id @default(autoincrement())
+  name              String
+  description       String
+  effect_type       String
+  effect_value       String
+  unlock_condition  String
+
+  powerups StudentPowerUp[]
+
+}
+
+model StudentPowerUp {
+  id                Int  @id @default(autoincrement())
+
+  quantity      Int
+  
+  studentID     Int   
+  student       Student   @relation(fields: [studentID], references: [id])
+
+  powerupID     Int   
+  powerup       PowerUp   @relation(fields: [powerupID], references: [id])
+
+  @@unique([studentID,powerupID])
+}
+
+model Streak {
+  studentID     Int    @id
+  current_streak Int
+  longest_streak Int
+  lad            DateTime
+
+  student       Student   @relation(fields: [studentID], references: [id])
+}

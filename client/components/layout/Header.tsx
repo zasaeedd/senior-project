@@ -1,9 +1,15 @@
-export default function Header() {
+import React from "react";
+
+const Header: React.FC = () => {
   return (
     <header className="flex justify-between items-center bg-white shadow-sm p-4">
       <div>
-        <h2 className="text-2xl font-semibold">Welcome back, Student 👋</h2>
-        <p className="text-gray-500 text-sm">Let’s continue learning!</p>
+        <h2 className="text-2xl font-semibold">
+          Welcome back, Student 👋
+        </h2>
+        <p className="text-gray-500 text-sm">
+          Let’s continue learning!
+        </p>
       </div>
 
       <div className="flex items-center gap-3">
@@ -15,4 +21,7 @@ export default function Header() {
       </div>
     </header>
   );
-}
+};
+
+export default Header;
+
