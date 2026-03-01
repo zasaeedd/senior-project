@@ -1,6 +1,11 @@
-import { PrismaClient } from "@prisma/client";
+// example: server/index.ts
+import { prisma } from './prisma.config';
 
-// Create a single instance of the Prisma Client
-const prisma = new PrismaClient()
+async function main() {
+  const users = await prisma.user.findMany();
+  console.log(users);
+}
 
-export default prisma;
+main()
+  .catch(console.error)
+  .finally(() => prisma.$disconnect());
