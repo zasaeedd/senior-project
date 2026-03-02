@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
-import prisma from "../prisma/client";
+import { prisma } from '../prisma/prisma.config';
 import { generateToken } from "../utils/jwt";
 
 export const login = async (req: Request, res: Response) => {
@@ -32,8 +32,18 @@ export const login = async (req: Request, res: Response) => {
             role: user.role, 
             token
         });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: "Server error "});
+    } catch (err: any) {
+        console.error("Login full error:", err); // 🔹 print in terminal
+        res.status(500).json({ message: err.message, stack: err.stack }); // 🔹 return full error in Postman
     }
 };
+
+
+// export const getUsers = async () => {
+//   try {
+//     const users = await prisma.user.findMany();
+//     return users;
+//   } catch (error) {
+//     console.error(error);
+//   }
+// };
