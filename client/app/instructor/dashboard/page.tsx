@@ -81,7 +81,7 @@ const DashboardPage: React.FC = () => {
                   <div className="w-16 h-16 bg-gray-300 rounded-full" />
                   <div>
                     <div className="font-semibold">Noora</div>
-                    <div className="text-sm text-gray-500">Student</div>
+                    <div className="text-sm text-gray-500">Instructor</div>
                   </div>
                 </div>
                 <div className="mt-4 text-sm text-gray-600">
