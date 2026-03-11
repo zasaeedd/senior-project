@@ -1,6 +1,7 @@
 import React from "react";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
+import ProfileCard from "@/components/ui/ProfileCard";
 
 const DashboardPage: React.FC = () => {
   return (
@@ -75,18 +76,7 @@ const DashboardPage: React.FC = () => {
           {/* Right column: profile / badges */}
           <aside className="w-80">
             <div className="sticky top-6 space-y-4">
-              <div className="bg-white p-4 rounded-lg shadow">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-gray-300 rounded-full" />
-                  <div>
-                    <div className="font-semibold">Noora</div>
-                    <div className="text-sm text-gray-500">Student</div>
-                  </div>
-                </div>
-                <div className="mt-4 text-sm text-gray-600">
-                  Points: <strong>120</strong> • Streak: <strong>5</strong>
-                </div>
-              </div>
+              <ProfileCard />
 
               <div className="bg-white p-4 rounded-lg shadow">
                 <h4 className="font-semibold mb-2">Badges</h4>
