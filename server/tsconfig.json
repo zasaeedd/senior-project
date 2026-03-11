@@ -72,5 +72,16 @@
     "declaration": true,
     "declarationMap": true
   },
-  "include": ["index.ts", "routes/**/*.ts", "prisma/**/*.ts", "controllers/**/*.ts", "utils/**/*.ts", "prisma/client.ts", "prismaTest.ts", "prisma/prisma.config.ts"]
+  "include": [
+    "index.ts",
+    "routes/**/*.ts",
+    "middleware/**/*.ts",
+    "prisma/**/*.ts",
+    "controllers/**/*.ts",
+    "utils/**/*.ts",
+    "types/**/*.d.ts",
+    "prisma/client.ts",
+    "prismaTest.ts",
+    "prisma/prisma.config.ts"
+  ]
 }

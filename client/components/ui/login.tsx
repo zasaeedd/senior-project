@@ -46,6 +46,8 @@ export function LoginForm() {
       localStorage.setItem("userId", data.id);
       localStorage.setItem("role", data.role);
 
+      console.log(`token: ${data.token}`)
+
       // redirect user based on role
       if (data.role === "student") {
         router.push("/student/dashboard");

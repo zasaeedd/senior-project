@@ -38,6 +38,38 @@ export const login = async (req: Request, res: Response) => {
     }
 };
 
+// get the current user's data from userid
+export const getCurrentUser = async (req: Request, res: Response) => {
+    try{
+        const userId = req.userId;
+
+        if(!userId){
+            return res.status(401).json({message: "Unauthorized"});
+        }
+
+        const user = await prisma.user.findUnique({
+            where: {userId: parseInt(userId)},
+            select: {
+                userId: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                role: true,
+            },
+        });
+
+        if(!user) {
+            return res.status(401).json({message: "User not found"});
+
+        }
+
+        res.json(user);
+    }catch(err: any) {
+        console.error("Error fetching user: ", err);
+        res.status(500).json({message: err.message});
+    }
+}
+
 
 // export const getUsers = async () => {
 //   try {
