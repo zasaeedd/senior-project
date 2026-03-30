@@ -3,6 +3,8 @@ import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import DashboardPage from "@/app/student/dashboard/page";
 import InstructorSidebar from "@/components/layout/InstructorSidebar";
+import InstructorHeader from "@/components/layout/InstructorHeader";
+import ViewCourses from "@/components/layout/ViewCourses";
 
 <aside className="w-64 bg-white border-r">
   <InstructorSidebar />
@@ -12,6 +14,7 @@ const InstructorDashboardPage: React.FC = () => {
   return (
     <div className="min-h-screen flex bg-gray-100">
       <aside className="w-64 bg-white border-r">
+        <ViewCourses />
         <InstructorSidebar />
       </aside>
 
@@ -19,22 +22,10 @@ const InstructorDashboardPage: React.FC = () => {
       <div className="flex-1 flex flex-col">
         {/* <Header /> */}
 
-        <div className="p-6 space-y-6">
-          {/* Welcome */}
-          <h1 className="text-2xl font-bold">Welcome Dr. Ahmed</h1>
-          <h2 className="text-xl text-gray-600">
-            ITCS440 - Intelligent Systems
-          </h2>
-
-          {/* Actions */}
-          <div className="flex gap-4">
-            <button className="px-4 py-2 bg-slate-700 text-white rounded">
-              Add Quiz
-            </button>
-            <button className="px-4 py-2 bg-slate-700 text-white rounded">
-              Send Announcement
-            </button>
-          </div>
+         <div className="p-6 space-y-6">
+          <div className="flex-1 flex flex-col">
+            <InstructorHeader/>
+          </div> 
 
           {/* Charts Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
