@@ -48,7 +48,7 @@ const CreateQuiz: React.FC = () => {
     console.log("Quiz payload:", payload);
 
     const token = localStorage.getItem("token");
-    const response = await fetch("http://localhost:5000/api/quizzes", {
+    const response = await fetch("http://localhost:5000/api/quiz/creation", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
