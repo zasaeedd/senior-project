@@ -11,6 +11,6 @@ router.post("/creation", authenticate, createQuiz);
 // router.post("/:quizId", authenticate, getQuiz);
 
 router.get("/:quizId", authenticate, getQuiz);
-
+//hello
 
 export default router
