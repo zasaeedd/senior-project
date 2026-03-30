@@ -49,13 +49,25 @@ export const getCurrentUser = async (req: Request, res: Response) => {
 
         const user = await prisma.user.findUnique({
             where: {userId: parseInt(userId)},
-            select: {
-                userId: true,
-                firstName: true,
-                lastName: true,
-                email: true,
-                role: true,
-            },
+            include:{
+                instructor: {
+                    include: {
+                        section: {
+                            include: {
+                                course: true
+                            }
+                        }
+                    }
+                },
+                student: true
+            }
+            // select: {
+            //     userId: true,
+            //     firstName: true,
+            //     lastName: true,
+            //     email: true,
+            //     role: true,
+            
         });
 
         if(!user) {
@@ -69,13 +81,3 @@ export const getCurrentUser = async (req: Request, res: Response) => {
         res.status(500).json({message: err.message});
     }
 }
-
-
-// export const getUsers = async () => {
-//   try {
-//     const users = await prisma.user.findMany();
-//     return users;
-//   } catch (error) {
-//     console.error(error);
-//   }
-// };
