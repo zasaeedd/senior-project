@@ -2,6 +2,7 @@ import "dotenv/config";
 import cors from "cors"
 import express from "express";
 import authRoutes from "./routes/auth";
+import quizRoutes from "./routes/quiz"
 
 
 const app = express();
@@ -17,6 +18,8 @@ app.use(express.json());
 
 //connect auth routes 
 app.use("/api/auth", authRoutes);
+
+app.use("/api/quiz", quizRoutes)
 
 // starting server 
 const PORT = 5000;

@@ -8,6 +8,6 @@ const router = express.Router()
 router.post("/login",login);
 
 // authenticate user by token then get its user info from the db
-router.post("/me", authenticate, getCurrentUser);
+router.get("/me", authenticate, getCurrentUser);
 
 export default router

@@ -1,0 +1,45 @@
+model Question {
+  id          Int    @id @default(autoincrement())
+  text        String 
+  type        String
+  points      Int
+  difficulty  String
+
+  quizID      Int    
+  quiz        Quiz   @relation(fields: [quizID], references: [id])
+
+  choices     Choice[]
+  studentAnswers StudentAnswer[]
+}
+
+shouldnt choices and studentAnswers be optional?? because its either
+
+
+are we still doing the students create quizzes too with slides?
+
+
+Create quiz:
+POST http://localhost:5000/api/quiz/creation
+Headers:
+Authorization: Bearer YOUR_TOKEN
+Content-Type: application/json
+Body:
+{
+"title": "Quiz 1",
+"duration": 30,
+"deadline": "2026-04-10T10:00:00.000Z",
+"courseID": 1,
+"sectionID": 1,
+"questions": [
+{
+"text": "2 + 2 = ?",
+"type": "mcq",
+"points": 5,
+"difficulty": "easy",
+"choices": [
+{ "text": "3", "is_correct": false },
+{ "text": "4", "is_correct": true }
+]
+}
+]
+}

@@ -1,10 +1,16 @@
 import express from "express";
-// import { login, getCurrentUser } from "../controllers/authController";
-// import { authenticate } from "../middleware/authMiddleware";
+import { createQuiz, getQuiz } from "../controllers/quizController";
+import { authenticate } from "../middleware/authMiddleware";
 
 const router = express.Router()
 
-// handle user login and create token
-// router.post("/creation", handler);
+// create a manual quiz by an authenticated instructor
+router.post("/creation", authenticate, createQuiz);
+
+// retrieve quiz details for student/s
+// router.post("/:quizId", authenticate, getQuiz);
+
+router.get("/:quizId", authenticate, getQuiz);
+
 
 export default router
