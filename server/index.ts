@@ -3,7 +3,8 @@ import cors from "cors"
 import express from "express";
 import authRoutes from "./routes/auth";
 import quizRoutes from "./routes/quiz"
-
+import studentRoutes from "./routes/info";
+import  InstructorRoutes  from "./routes/inst";
 
 const app = express();
 
@@ -20,6 +21,10 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 
 app.use("/api/quiz", quizRoutes)
+
+app.use("/api/info", studentRoutes);
+
+app.use("/api/Inst", InstructorRoutes);
 
 // starting server 
 const PORT = 5000;

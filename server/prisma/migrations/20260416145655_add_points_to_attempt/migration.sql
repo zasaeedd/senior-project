@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Attempt" ADD COLUMN     "points" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "totalPoints" INTEGER NOT NULL DEFAULT 0;

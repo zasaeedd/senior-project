@@ -58,6 +58,7 @@ model Instructor {
 
 model Section {
   id                Int    @id @default(autoincrement())
+  sectionNumber     Int
   total_std         Int 
 
   courseID          Int
@@ -89,6 +90,7 @@ model Quiz {
   deadline    DateTime
   created_at  DateTime
   source_type String
+  maxAttempts Int
 
   courseID      Int
   course        Course   @relation(fields: [courseID], references: [id])
@@ -100,7 +102,7 @@ model Quiz {
   section       Section   @relation(fields: [sectionID], references: [id])
 
   questions     Question[]
-  attempst      Attempt[]
+  attempts      Attempt[]
 }
 
 model Question {
@@ -166,10 +168,12 @@ model StudentAnswer {
 
 model Attempt {
   id            Int  @id @default(autoincrement())
-  start_time    Int
-  end_time      Int
-  score         Int
-  submitted_at  DateTime
+  start_time    DateTime
+  end_time      DateTime?
+  score         Int?
+  points        Int     @default(0)
+  totalPoints   Int     @default(0)
+  submitted_at  DateTime?
 
   studentID     Int   
   student       Student   @relation(fields: [studentID], references: [id])

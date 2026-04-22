@@ -2,40 +2,25 @@
 
 import * as React from "react";
 
+import Link from "next/link";
+
 interface Course {
-  id: number;
-  crs_name: string;
-  crs_code: string;
-  credits: number;
-}
-
-interface Section {
-  id: number;
-  total_std: number;
-  course: Course;
-}
-
-interface Instructor {
-  id: number;
-  department: string;
-  section: Section[];
-}
-
-interface User {
-  userId: number;
-  firstName: string;
-  lastName: string;
-  role: string;
-  instructor?: Instructor;
+  courseId: number;
+  courseCode: string;
+  courseName: string;
+  sectionNumber: number;
+  status: string;
+  xp: number;
+  quizzes?: { id: number; title: string; deadline: string }[]; 
 }
 
 const ViewCourses: React.FC = () => {
-  const [user, setUser] = React.useState<User | null>(null);
+  const [courses, setCourses] = React.useState<Course[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    const fetchUser = async () => {
+    const fetchCourses = async () => {
       try {
         const token = localStorage.getItem("token");
         if (!token) {
@@ -44,54 +29,81 @@ const ViewCourses: React.FC = () => {
           return;
         }
 
-        const response = await fetch("http://localhost:5000/api/auth/me", {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
+        const response = await fetch(
+          "http://localhost:5000/api/info/students/courses",
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           },
-        });
+        );
 
         if (!response.ok) {
-          throw new Error("Failed to fetch user data");
+          throw new Error("Failed to fetch courses");
         }
 
-        const userData = await response.json();
-        setUser(userData);
+        const coursesData = await response.json();
+        setCourses(coursesData);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to fetch user data");
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch courses",
+        );
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUser();
+    fetchCourses();
   }, []);
 
   if (loading) return <p>Loading courses...</p>;
   if (error) return <p>{error}</p>;
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-4">My Courses</h2>
-      {user?.instructor?.section?.length ? (
-        <ul className="space-y-4">
-          {user.instructor.section.map((section) => (
-            <li key={section.id} className="border p-4 rounded group relative">
-            <span className="font-semibold">{section.course.crs_code}</span>
+    <section>
+      {courses.length ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {courses.map((course) => {
+            const progress = Math.min((course.xp / 100) * 100, 100);
 
-            {/* Hidden details that appear on hover */}
-            <div className="absolute left-0 top-full mt-2 w-64 bg-white border rounded shadow-lg p-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                <h3 className="text-lg font-bold">{section.course.crs_name}</h3>
-                <p>Credits: {section.course.credits}</p>
-                <p>Students Enrolled: {section.total_std}</p>
-            </div>
-            </li>
-          ))}
-        </ul>
+            return (
+              <Link href={`/student/courses/${course.courseId}`}>
+                <div
+                  key={course.courseId}
+                  className="bg-white rounded-xl shadow-md p-6 transition-transform transform hover:scale-105 hover:shadow-lg"
+                >
+                  <h3 className="font-semibold text-lg text-slate-800">
+                    {course.courseCode} – {course.courseName}
+                  </h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Section {course.sectionNumber}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Status: {course.status}
+                  </p>
+
+                  {/* Progress bar */}
+                  <div className="mt-4">
+                    <div className="w-full bg-gray-200 h-2 rounded-full">
+                      <div
+                        className="bg-slate-700 h-2 rounded-full"
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
+                    <div className="mt-2 text-sm text-gray-600">
+                      Progress: {progress.toFixed(0)}%
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
       ) : (
         <p>No courses found.</p>
       )}
-    </div>
+    </section>
   );
 };
 

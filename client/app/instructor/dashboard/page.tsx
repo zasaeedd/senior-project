@@ -4,8 +4,9 @@ import Header from "@/components/layout/Header";
 import DashboardPage from "@/app/student/dashboard/page";
 import InstructorSidebar from "@/components/layout/InstructorSidebar";
 import InstructorHeader from "@/components/layout/InstructorHeader";
-import ViewCourses from "@/components/layout/ViewCourses";
-
+import ViewCoursesInst from "@/components/layout/ViewCourseInst";
+import ViewCourseInst from "@/components/layout/ViewCourseInst";
+import InstructorProfileCard from "@/components/ui/InstProfileCard";
 <aside className="w-64 bg-white border-r">
   <InstructorSidebar />
 </aside>;
@@ -14,7 +15,7 @@ const InstructorDashboardPage: React.FC = () => {
   return (
     <div className="min-h-screen flex bg-gray-100">
       <aside className="w-64 bg-white border-r">
-        <ViewCourses />
+        <ViewCourseInst />
         <InstructorSidebar />
       </aside>
 
@@ -22,10 +23,10 @@ const InstructorDashboardPage: React.FC = () => {
       <div className="flex-1 flex flex-col">
         {/* <Header /> */}
 
-         <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6">
           <div className="flex-1 flex flex-col">
-            <InstructorHeader/>
-          </div> 
+            <InstructorHeader />
+          </div>
 
           {/* Charts Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -44,7 +45,7 @@ const InstructorDashboardPage: React.FC = () => {
               <p className="text-lg">80%</p>
             </div>
             <div className="bg-white p-4 rounded-lg shadow">
-              <h3 className="font-semibold">Most Struggled Topic</h3>
+              <h3 className="font-semibold">Most Struggled Quiz</h3>
               <p>Chapter 6</p>
             </div>
             <div className="bg-white p-4 rounded-lg shadow">
@@ -65,6 +66,13 @@ const InstructorDashboardPage: React.FC = () => {
           </button>
         </div>
       </div>
+      <aside className="w-80">
+   <div className="sticky top-6 space-y-4">
+    {/* Instructor Profile Card */}
+    <InstructorProfileCard />
+    </div>
+
+  </aside>
     </div>
   );
 };

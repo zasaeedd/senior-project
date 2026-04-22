@@ -33,8 +33,8 @@ export const login = async (req: Request, res: Response) => {
             token
         });
     } catch (err: any) {
-        console.error("Login full error:", err); // 🔹 print in terminal
-        res.status(500).json({ message: err.message, stack: err.stack }); // 🔹 return full error in Postman
+        console.error("Login full error:", err); //  print in terminal
+        res.status(500).json({ message: err.message, stack: err.stack }); //  return full error in Postman
     }
 };
 
@@ -54,7 +54,10 @@ export const getCurrentUser = async (req: Request, res: Response) => {
                     include: {
                         section: {
                             include: {
-                                course: true
+                                course: true,
+                                _count: {
+                                    select: {enrollments: true}
+                                }
                             }
                         }
                     }

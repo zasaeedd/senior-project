@@ -15,7 +15,6 @@ const InstructorHeader: React.FC = () => {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
-  // ✅ Add this state for showing/hiding the quiz form
   const [showForm, setShowForm] = React.useState(false);
 
   React.useEffect(() => {
@@ -52,25 +51,27 @@ const InstructorHeader: React.FC = () => {
   }, []);
 
   return (
-    <header className="w-full bg-white shadow px-6 py-4 flex justify-between items-center">
+    <header className="w-full bg-white shadow rounded-lg px-6 py-4 flex justify-between items-center">
       <h1 className="text-xl font-bold">
         {loading
           ? "Loading..."
           : error
           ? `Error: ${error}`
-          : `Welcome ${user?.firstName} ${user?.lastName}`}
+          : `Welcome back ${user?.firstName} ${user?.lastName}!`}
       </h1>
 
       <div className="flex gap-4">
-      <button className="px-4 py-2 bg-slate-700 text-white rounded">Send Announcement</button>
+     <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+  Send Announcement
+</button>
 
-        {/* Add Quiz Button */}
-        <button
-          onClick={() => setShowForm(true)}
-          className="px-4 py-2 bg-slate-700 text-white rounded"
-        >
-          Add Quiz
-        </button>
+<button
+  onClick={() => setShowForm(true)}
+  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+>
+  Add Quiz
+</button>
+
       </div>
 
       {/* Modal for CreateQuiz */}
@@ -78,7 +79,7 @@ const InstructorHeader: React.FC = () => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
           <div className="bg-white p-6 rounded shadow-lg w-[600px] max-h-[88vh] overflow-y-auto">
             <h2 className="text-xl font-bold mb-4">Create a New Quiz</h2>
-            <CreateQuiz />
+            <CreateQuiz onClose={()=> setShowForm(false)}/>
             <button
               onClick={() => setShowForm(false)}
               className="mt-4 px-4 py-2 bg-red-600 text-white rounded"
