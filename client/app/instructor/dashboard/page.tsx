@@ -1,78 +1,58 @@
+"use client";
+
 import React from "react";
-import Sidebar from "@/components/layout/Sidebar";
-import Header from "@/components/layout/Header";
-import DashboardPage from "@/app/student/dashboard/page";
 import InstructorSidebar from "@/components/layout/InstructorSidebar";
 import InstructorHeader from "@/components/layout/InstructorHeader";
-import ViewCoursesInst from "@/components/layout/ViewCourseInst";
 import ViewCourseInst from "@/components/layout/ViewCourseInst";
 import InstructorProfileCard from "@/components/ui/InstProfileCard";
-<aside className="w-64 bg-white border-r">
-  <InstructorSidebar />
-</aside>;
+import DashboardCenter from "@/components/layout/DashboardCenter";
 
 const InstructorDashboardPage: React.FC = () => {
+  const [selectedCourseId, setSelectedCourseId] = React.useState<number | null>(1);
+  const [selectedSectionId, setSelectedSectionId] = React.useState<number | null>(1);
+  const [selectedCourseCode, setSelectedCourseCode] = React.useState<string | null>(null);
+  const [selectedCourseName, setSelectedCourseName] = React.useState<string | null>(null);
+  const [selectedSections, setSelectedSections] = React.useState<{sectionId: number; sectionNumber: number}[]>([]);
+
   return (
     <div className="min-h-screen flex bg-gray-100">
+      {/* Left Sidebar */}
       <aside className="w-64 bg-white border-r">
-        <ViewCourseInst />
-        <InstructorSidebar />
+        <div className="sticky top-6">
+          <ViewCourseInst
+            onSelectedCourse={(courseId, sectionId, courseCode,courseName, sections) => {
+              setSelectedCourseId(courseId);
+              setSelectedSectionId(sectionId);
+              setSelectedCourseCode(courseCode);
+              setSelectedCourseName(courseName);
+              setSelectedSections(sections);
+            }}
+          />
+          <InstructorSidebar />
+        </div>
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        {/* <Header /> */}
+      <main className="w-3/4 p-6 space-y-6">
+        <InstructorHeader />
 
-        <div className="p-6 space-y-6">
-          <div className="flex-1 flex flex-col">
-            <InstructorHeader />
-          </div>
+        <DashboardCenter
+          selectedCourseId={selectedCourseId}
+          selectedSectionId={selectedSectionId}
+          selectedCourseCode={selectedCourseCode}
+          selectedCourseName={selectedCourseName}
+          sections={selectedSections}
+          onSectionChange={(sectionId) =>setSelectedSectionId(sectionId)}
 
-          {/* Charts Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white p-4 rounded-lg shadow h-64 flex items-center justify-center text-gray-400">
-              Bar Chart Placeholder
-            </div>
-            <div className="bg-white p-4 rounded-lg shadow h-64 flex items-center justify-center text-gray-400">
-              Pie Chart Placeholder
-            </div>
-          </div>
+        />
+      </main>
 
-          {/* Analytics Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white p-4 rounded-lg shadow">
-              <h3 className="font-semibold">Average Score</h3>
-              <p className="text-lg">80%</p>
-            </div>
-            <div className="bg-white p-4 rounded-lg shadow">
-              <h3 className="font-semibold">Most Struggled Quiz</h3>
-              <p>Chapter 6</p>
-            </div>
-            <div className="bg-white p-4 rounded-lg shadow">
-              <h3 className="font-semibold">Understanding Level</h3>
-              <div className="w-full bg-gray-200 h-3 rounded">
-                <div className="bg-green-500 h-3 rounded w-4/5"></div>
-              </div>
-            </div>
-            <div className="bg-white p-4 rounded-lg shadow">
-              <h3 className="font-semibold">Top Performer</h3>
-              <p>Nora Mohammed</p>
-            </div>
-          </div>
-
-          {/* Details Button */}
-          <button className="mt-4 px-6 py-2 bg-blue-600 text-white rounded">
-            Click for Details
-          </button>
-        </div>
-      </div>
+      {/* Right Column */}
       <aside className="w-80">
-   <div className="sticky top-6 space-y-4">
-    {/* Instructor Profile Card */}
-    <InstructorProfileCard />
-    </div>
-
-  </aside>
+        <div className="sticky top-6 space-y-4">
+          <InstructorProfileCard />
+        </div>
+      </aside>
     </div>
   );
 };

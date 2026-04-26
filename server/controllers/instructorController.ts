@@ -6,28 +6,63 @@ import { generateToken } from "../utils/jwt";
 
 
 
+
+
 export const getInstructorCourses = async (req: Request, res: Response) => {
   try {
-const instructorId = (req.user as { id: number }).id;
+    // auth middleware attaches userId to req
+    const userId= (req as any).userId;
+
+    const Instructor = await prisma.instructor.findUnique({
+        where: {userID: Number(userId)}
+    })
+
+    if (!Instructor) {
+        return res.status(404).json({ error: "Instructor not found"});
+    }
+
+    console.log("Instructor record:", Instructor);
+
 
     const sections = await prisma.section.findMany({
-      where: { instructorID: instructorId },
+      where: { instructorID: Number(Instructor.id) },
       include: {
-        course: true
-      }
+        course: true,
+        _count: { select: { enrollments: true}}
+      },
     });
 
-    // Transform into course list with sections
-    const courses = sections.map(sec => ({
-      courseId: sec.course.id,
-      courseCode: sec.course.crs_code,
-      courseName: sec.course.crs_name,
-      sectionId: sec.id,
-      sectionNumber: sec.sectionNumber
-    }));
+    console.log("Sections fetched:", sections)
 
-    res.json(courses);
+    // Group sections by course
+    const coursesMap = new Map<number, any>();
+
+    sections.forEach((sec) => {
+      if (!coursesMap.has(sec.course.id)) {
+        coursesMap.set(sec.course.id, {
+          courseId: sec.course.id,
+          courseCode: sec.course.crs_code,
+          courseName: sec.course.crs_name,
+          sections: [],
+        });
+      }
+
+      coursesMap.get(sec.course.id).sections.push({
+        sectionId: sec.id,
+        sectionNumber: sec.sectionNumber,
+        totalStudents: sec._count.enrollments,
+      });
+    });
+
+    const results = Array.from(coursesMap.values())
+    results.sort((a, b) => a.courseId - b.courseId);
+    console.log("Course response:", results)
+
+
+    res.json(results);
   } catch (err) {
+    console.log("Error in getInstructorCourses:", err)
+
     res.status(500).json({ error: "Failed to fetch instructor courses" });
   }
 };
@@ -35,14 +70,233 @@ const instructorId = (req.user as { id: number }).id;
 
 
 
-// export const getInstructorCourseAnalytics = async (req: Request, res: Response) => {
-//   const { courseId } = req.params;
+
+
+
+
+// GET /api/section/:id/details return section details
+export const getSectionDetails = async (req: Request, res: Response) => {
+  try {
+    const sectionId = Number(req.params.id);
+const section = await prisma.section.findUnique({
+  where: { id: sectionId },
+  include: {
+    course: { select: { id: true, crs_name: true, crs_code: true } },
+  },
+});
+
+if (!section) {
+  return res.status(404).json({ message: "Section not found" });
+}
+
+res.json({
+  sectionId: section.id,
+  sectionNumber: section.sectionNumber,
+  courseId: section.course.id,
+  courseName: section.course.crs_name,
+  courseCode: section.course.crs_code,
+});
+
+  } catch (err) {
+    console.error("Error fetching section details:", err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+
+
+
+// not used yet
+export const getInstructorCourseAnalytics = async (req: Request, res: Response) => {
+  const { courseId } = req.params;
+  try {
+    // Example: average score, completion rate, top performer
+    
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch course analytics" });
+  }
+};
+
+
+
+
+
+
+
+// to check the pending quizzes (has written questions)
+export const getUngradedAttempts = async (req: Request, res: Response) => {
+  try {
+    const userId = req.userId;
+    const sectionId = Number(req.query.sectionId);
+
+    const section = await prisma.section.findUnique({
+      where: { id: Number(sectionId) },
+      select: { courseID: true }
+    });
+    if (!section) {
+  return res.status(404).json({ message: "Section not found" });
+}
+    const courseId = section.courseID;
+
+
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    const instructor = await prisma.instructor.findUnique({
+      where: { userID: Number(userId)},
+      include: { section: true },
+    });
+
+    if (!instructor) {
+      return res.status(403).json({ message: "Only instructors can access this resource" });
+    }
+
+    // console.log("Filters:", { sectionId, courseId, instructorId: instructor.id });
+
+    const quizzes = await prisma.quiz.findMany({
+  where: { requiresManualGrading: true },
+  select: { id: true, title: true, sectionID: true, courseID: true }
+});
+// console.log("Manual grading quizzes:", quizzes);
+
+    // Fetch only attempts that match section + course + manual grading
+    const ungradedAttempts = await prisma.attempt.findMany({
+      where: {
+        isGraded: false,
+        quiz: {
+          requiresManualGrading: true,   //  only written quizzes
+          sectionID: sectionId,          //  filter by section
+          courseID: courseId,            //  filter by course
+          section: {
+            instructorID: instructor.id,
+          },
+        },
+      },
+      include: {
+        student: { include: { user: true } },
+        quiz: {
+          select: {
+            id: true,
+            title: true,
+            requiresManualGrading: true,
+            section: { select: { sectionNumber: true } },
+          },
+        },
+      },
+      orderBy: { submitted_at: "desc" }, //  newest first
+    });
+
+    // console.log("Ungraded attempts raw (no filter):", ungradedAttempts);
+
+    //  Keep only the last attempt per student/quiz
+ const latestAttempts = Object.values(
+  ungradedAttempts.reduce((acc: any, attempt) => {
+    const key = `${attempt.studentID}-${attempt.quizID}`;
+    const currentDate = attempt.submitted_at ? new Date(attempt.submitted_at).getTime() : 0;
+    const existingDate = acc[key]?.submitted_at ? new Date(acc[key].submitted_at).getTime() : 0;
+
+    if (!acc[key] || currentDate > existingDate) {
+      acc[key] = attempt;
+    }
+    return acc;
+  }, {})
+);
+
+// console.log("Latest attempts after reduce:", latestAttempts);
+
+
+res.json(latestAttempts);
+
+  } catch (err) {
+    console.error("Error fetching ungraded attempts:", err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+
+
+
+
+
+
+// get the pending written question attempt details so the instructor can grade it.
+export const getAttemptDetails = async (req: Request, res: Response) => {
+  try {
+    const attemptId = Number(req.params.attemptId);
+
+    const attempt = await prisma.attempt.findUnique({
+      where: { id: attemptId },
+      include: {
+        quiz: {
+          include: { questions: {
+            select: {
+              id: true,
+              text: true,
+              type: true,
+              points: true,
+            }
+          }}
+        },
+        studentAnswers: {
+            include: {
+              question: true,
+              choice: true
+            },
+          },
+        student: { include: { user: true } }
+            }
+    });
+
+    if (!attempt) return res.status(404).json({ message: "Attempt not found" });
+        console.log("Attempt details:", JSON.stringify(attempt, null, 2)); // ✅ log full payload
+    
+    res.json(attempt);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error fetching attempt details" });
+  }
+};
+
+
+
+
+
+
+
+// export const gradeAttempt = async (req: Request, res: Response) => {
 //   try {
-//     // Example: average score, completion rate, top performer
-//     const analytics = await analyticsService.getCourseAnalytics(Number(courseId));
-//     res.json(analytics);
+//     const attemptId = Number(req.params.attemptId);
+//     const { grades } = req.body as { grades: { answerId: number; score: number }[] };
+
+//     // Update each StudentAnswer with the score
+//     for (const g of grades) {
+//       await prisma.studentAnswer.update({
+//         where: { id: g.answerId },
+//         data: { score: g.score },
+//       });
+//     }
+
+//     // Recalculate total score for the attempt
+//     const updatedAnswers = await prisma.studentAnswer.findMany({
+//       where: { attemptID: attemptId },
+//       include: { question: true },
+//     });
+
+//     const totalScore = updatedAnswers.reduce((sum, ans) => sum + (ans.score ?? 0), 0);
+//     const totalPoints = updatedAnswers.reduce((sum, ans) => sum + (ans.question.points ?? 0), 0);
+
+//     await prisma.attempt.update({
+//       where: { id: attemptId },
+//       data: {
+//         score: totalScore,
+//         points: totalPoints,
+//         isGraded: true,
+//       },
+//     });
+
+//     res.json({ message: "Grades saved", score: totalScore, points: totalPoints });
 //   } catch (err) {
-//     res.status(500).json({ error: "Failed to fetch course analytics" });
+//     console.error(err);
+//     res.status(500).json({ message: "Error saving grades" });
 //   }
 // };
 
@@ -50,14 +304,55 @@ const instructorId = (req.user as { id: number }).id;
 
 
 
+export const gradeAttempt = async (req: Request, res: Response) => {
+  try {
+    const attemptId = Number(req.params.attemptId);
+    const { grades } = req.body as { grades: { answerId: number; score: number }[] };
 
+    // Update each StudentAnswer with the score
+    for (const g of grades) {
+      await prisma.studentAnswer.update({
+        where: { id: g.answerId },
+        data: { score: g.score },
+      });
+    }
 
-// export const getInstructorCoursePerformance = async (req: Request, res: Response) => {
-//   const { courseId } = req.params;
-//   try {
-//     const performance = await analyticsService.getCoursePerformance(Number(courseId));
-//     res.json(performance);
-//   } catch (err) {
-//     res.status(500).json({ error: "Failed to fetch course performance" });
-//   }
-// };
+    // Fetch attempt with quiz and answers
+    const attempt = await prisma.attempt.findUnique({
+      where: { id: attemptId },
+      include: {
+        quiz: { include: { questions: true } },
+        studentAnswers: { include: { question: true } },
+      },
+    });
+
+    if (!attempt) {
+      return res.status(404).json({ message: "Attempt not found" });
+    }
+
+    // Sum all scores (MCQ auto + written manual)
+    const totalScore = attempt.studentAnswers.reduce(
+      (sum, ans) => sum + (ans.score ?? (ans.is_correct ? ans.question.points : 0)),
+      0
+    );
+
+    // Total possible points = all quiz questions
+    const totalPoints = attempt.quiz.questions.reduce((sum, q) => sum + q.points, 0);
+
+    await prisma.attempt.update({
+      where: { id: attemptId },
+      data: {
+        score: totalScore,     // earned points (MCQ + written)
+        points: totalPoints,   // total possible points
+        totalPoints: totalPoints,
+        isGraded: true,
+      },
+    });
+
+    res.json({ message: "Grades saved", score: totalScore, points: totalPoints });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error saving grades" });
+  }
+};
+

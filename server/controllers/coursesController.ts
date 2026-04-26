@@ -158,7 +158,7 @@ export const getStudentCoursesWithQuizzes = async (req: Request, res: Response) 
       sectionNumber: enroll.section.sectionNumber,
       status: enroll.status,
       xp: enroll.xp,
-      // ✅ filter quizzes here by sectionID if needed
+      //  filter quizzes here by sectionID if needed
       quizzes: (enroll.section.course.quizzes || []).filter(
         q => q.sectionID === enroll.section.id
       )
@@ -310,6 +310,7 @@ export const getCourseQuizzes = async (req: Request, res: Response) => {
             attempts: {
               where: { studentID: studentUser.student.id },
             },
+            questions: true,
           },
         },
       },
@@ -319,7 +320,7 @@ export const getCourseQuizzes = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Course not found" });
     }
 
-    // ✅ Always return the course object, even if quizzes is empty
+    //  Always return the course object, even if quizzes is empty
     console.log("Course with quizzes:", course);
     return res.json(course);
   } catch (err) {

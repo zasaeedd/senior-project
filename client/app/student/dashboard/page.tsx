@@ -199,7 +199,7 @@ interface Course {
   crs_code: string;
   crs_name: string;
   sectionNumber: number;
-  quizzes: Quiz[]; // ✅ not optional
+  quizzes: Quiz[]; //  not optional
 }
 
 
@@ -379,7 +379,7 @@ const pendingQuizzes = coursesWithQuizzes.flatMap(course =>
 
 const completedQuizzes = coursesWithQuizzes.flatMap(course =>
   (course.quizzes || []).filter((q: Quiz) =>
-    q.attempts && q.attempts.length > 0 // ✅ no deadline check
+    q.attempts && q.attempts.length > 0 //  no deadline check
   )
 );
 

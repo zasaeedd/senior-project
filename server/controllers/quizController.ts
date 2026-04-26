@@ -162,6 +162,10 @@ export const createQuiz = async (req: Request, res: Response) => {
       return baseQuestion;
     });
 
+    const hasWrittenQuestions = validatedQuestions.some(
+    (q: any) => q.type === "written"
+    );
+
     // create quiz database record 
     const createdQuizzes = [];
     for (const section of sections) {
@@ -176,6 +180,7 @@ export const createQuiz = async (req: Request, res: Response) => {
         courseID: course.id,
         sectionID: section.id,
         userID: creator.userId,
+        requiresManualGrading: hasWrittenQuestions,
         questions: {
           create: validatedQuestions,
         },
@@ -272,13 +277,6 @@ export const getQuiz = async (req: Request, res: Response) => {
 
     console.log("quizId:", quizId, "courseId:", courseId);
 
-// const enrollments = await prisma.enrollment.findMany({
-//   where: { studentID: studentUser.student.id },
-// });
-
-// Collect section IDs the student belongs to
-// const sectionIDs = enrollments.map(e => e.sectionID);
-
 
 const sectionId = Number(req.params.sectionId);
 
@@ -331,207 +329,6 @@ const sectionId = Number(req.params.sectionId);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
-
-
-
-
-
-
-
-
-// export const submitQuizAttempt = async (req: Request, res: Response) => {
-//   try {
-//     console.log("Incoming request:", {
-//   userId: req.userId,
-//   quizId: req.params.quizId,
-//   answers: req.body.answers,
-//     });
-
-//       const userId = req.userId;
-//       const quizId = Number(req.params.quizId);
-//       const { answers } = req.body;
-    
-
-//     if (!userId) {
-//       return res.status(401).json({ message: "Unauthorized" });
-//     }
-
-//     // Verify student
-//     const studentUser = await prisma.user.findUnique({
-//       where: { userId: parseInt(userId) },
-//       include: { student: true },
-//     });
-//     if (!studentUser || studentUser.role !== "student" || !studentUser.student) {
-//       return res.status(403).json({ message: "Only students can submit attempts" });
-//     }
-
-//     console.log("Fetched studentUser:", studentUser);
-
-//     // Fetch quiz with correct answers
-//     const quiz = await prisma.quiz.findUnique({
-//       where: { id: quizId },
-//       include: { questions: { include: { choices: true } } },
-//     });
-//     if (!quiz) return res.status(404).json({ message: "Quiz not found" });
-
-//     // Calculate score
-//     let correctCount = 0;
-//     quiz.questions.forEach((q) => {
-//       const studentAnswer = answers[q.id];
-//       const correctChoice = q.choices.find((c) => c.is_correct);
-//       if (studentAnswer === correctChoice?.id) correctCount++;
-//     });
-//   const score = quiz.questions.length > 0
-//   ? Math.round((correctCount / quiz.questions.length) * 100)
-//   : 0;
-//   console.log("Final score:", score, "CorrectCount:", correctCount, "Total questions:", quiz.questions.length);
-
-//     // Save attempt + answers
-//     console.log("Answers payload:", answers);
-//     console.log("Quiz questions:", quiz.questions.map(q => q.id));
-    
-//     const attempt = await prisma.attempt.create({
-//       data: {
-//         studentID: studentUser.student.id,
-//         quizID: quizId,
-//         score,
-//         start_time: new Date().getTime(),
-//         end_time: new Date().getTime(),
-//         submitted_at: new Date(),
-//         studentAnswers: {
-//           create: Object.entries(answers).map(([questionId, choiceOrText]) => {
-//             const question = quiz.questions.find((p) => p.id === Number(questionId));
-//             const correctChoice = question?.choices.find((c) => c.is_correct);
-//             const answerData: any = {
-//               question: {
-//                 connect: { id: Number(questionId) },
-//               },
-//               short_text_ans: typeof choiceOrText === "string" ? choiceOrText : null,
-//               is_correct: typeof choiceOrText === "number" && choiceOrText === correctChoice?.id,
-//               time_taken: 0,
-//               feedback: "",
-//             };
-//             if (typeof choiceOrText === "number") {
-//               answerData.selected_ans_id = choiceOrText;
-//               // answerData.selected_choiceID = choiceOrText;
-//             }
-//             return answerData;
-//           }),
-//         },
-//       },
-//     });
-
-//     return res.json({ score, attemptId: attempt.id });
-//   } catch (err) {
-//     console.error("Error submitting attempt:", err);
-//     return res.status(500).json({ message: "Internal Server Error" });
-//   }
-// };
-
-
-
-
-
-
-// export const submitQuizAttempt = async (req: Request, res: Response) => {
-//   try {
-//     console.log("Incoming request:", {
-//       userId: req.userId,
-//       quizId: req.params.quizId,
-//       answers: req.body.answers,
-//     });
-
-//     const userId = req.userId;
-//     const quizId = Number(req.params.quizId);
-//     const { answers } = req.body;
-
-//     if (!userId) {
-//       return res.status(401).json({ message: "Unauthorized" });
-//     }
-
-//     // Verify student
-//     const studentUser = await prisma.user.findUnique({
-//       where: { userId: parseInt(userId) },   
-//     });
-//     if (!studentUser || studentUser.role !== "student" || !studentUser.student) {
-//       return res.status(403).json({ message: "Only students can submit attempts" });
-//     }
-
-//     console.log("Fetched studentUser:", studentUser);
-
-//     // Fetch quiz with correct answers
-//     const quiz = await prisma.quiz.findUnique({
-//       where: { id: quizId },
-//       include: { questions: { include: { choices: true } } },
-//     });
-//     if (!quiz) return res.status(404).json({ message: "Quiz not found" });
-
-//     // Calculate score
-//     let correctCount = 0;
-//     let earnedPoints = 0;
-//     let totalPoints = 0;
-//     quiz.questions.forEach((q) => {
-//       const studentAnswer = answers[q.id];
-//       const correctChoice = q.choices.find((c) => c.is_correct);
-    
-//       totalPoints += q.points;
-//       if (studentAnswer === correctChoice?.id) correctCount++;
-//       if (typeof studentAnswer === "number" && studentAnswer === correctChoice?.id){
-//         earnedPoints += q.points;
-//       }
-
-//     });
-
-//     const score = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0;
-
-//     console.log("Final score:", score, "CorrectCount:", correctCount, "Total questions:", quiz.questions.length);
-
-//     // Save attempt + answers
-//     console.log("Answers payload:", answers);
-//     console.log("Quiz questions:", quiz.questions.map(q => q.id));
-
-//     const attempt = await prisma.attempt.create({
-//       data: {
-//         studentID: studentUser.student.id,
-//         quizID: quizId,
-//         score,
-//         points: earnedPoints,
-//         totalPoints: totalPoints,
-//         start_time: new Date(),
-//         end_time: new Date(),
-
-//         submitted_at: new Date(),
-//         studentAnswers: {
-//           create: Object.entries(answers).map(([questionId, choiceOrText]) => {
-//             const question = quiz.questions.find((p) => p.id === Number(questionId));
-//             const correctChoice = question?.choices.find((c) => c.is_correct);
-
-//             return {
-//               question: { connect: { id: Number(questionId) } },
-//               short_text_ans: typeof choiceOrText === "string" ? choiceOrText : null,
-//               is_correct: typeof choiceOrText === "number" && choiceOrText === correctChoice?.id,
-//               time_taken: 0,
-//               feedback: "",
-//               selected_ans_id: typeof choiceOrText === "number" ? choiceOrText : 0, 
-//             };
-//           }),
-//         },
-//       },
-//     });
-
-//     return res.json({ 
-//       score, 
-//       points: earnedPoints,
-//       totalPoints: totalPoints,
-//       attemptId: attempt.id 
-//     });
-//   } catch (err) {
-//     console.error("Error submitting attempt:", err);
-//     return res.status(500).json({ message: "Internal Server Error" });
-//   }
-// };
-
 
 
 
@@ -597,10 +394,97 @@ export const startAttempt = async (req: Request, res: Response) => {
 
 
 
+// export const submitAttempt = async (req: Request, res: Response) => {
+//   try {
+//     const userId = req.userId;
+//     if (!userId) return res.status(401).json({ message: "Unauthorized" });
+//     const { attemptId, quizId, answers } = req.body;
+
+//     const quiz = await prisma.quiz.findUnique({
+//       where: { id: Number(quizId) },
+//       include: { questions: { include: { choices: true } } },
+//     });
+    
+//     const requiresManualGrading = quiz?.requiresManualGrading ?? false;
+
+//     if (!quiz) {
+//       return res.status(404).json({ message: "Quiz not found" });
+//     }
+
+//     let points = 0;
+//     let totalPoints = 0;
+
+//     const studentAnswersData = Object.entries(answers).map(([questionId, choiceOrText]) => {
+//       const question = quiz.questions.find(q => q.id === Number(questionId));
+//       if (!question) return null;
+
+//       totalPoints += question.points;
+//       const correctChoice = question.choices.find(c => c.is_correct);
+//       let isCorrect = false;
+
+//       if (question.type === "mcq" && typeof choiceOrText === "number") {
+//         isCorrect = choiceOrText === correctChoice?.id;
+//         if (isCorrect) points += question.points;
+//       } else if (question.type === "written" && typeof choiceOrText === "string") {
+//         if (choiceOrText.trim() !== "") {
+//           // points += question.points;
+//           isCorrect = false;
+//         }
+//       }
+
+//       return {
+//         question: { connect: { id: Number(questionId) } },
+//         short_text_ans: typeof choiceOrText === "string" ? choiceOrText : null,
+//         is_correct: isCorrect,
+//         time_taken: 0,
+//         feedback: "",
+//         selected_ans_id: typeof choiceOrText === "number" ? choiceOrText : 0,
+//       };
+//     }).filter((ans): ans is NonNullable<typeof ans> => ans !== null);
+
+//     const score = totalPoints > 0 ? Math.round((points / totalPoints) * 100) : 0;
+
+//     console.log("Submit payload:", {
+//   attemptId,
+//   quizId,
+//   answers,
+//   score,
+//   points,
+//   totalPoints,
+//   studentAnswersData,
+// });
+
+//     const updatedAttempt = await prisma.attempt.update({
+//       where: { id: Number(attemptId) },
+//       data: {
+//         score,
+//         points,
+//         totalPoints,
+//         end_time: new Date(),
+//         submitted_at: new Date(),
+//         isGraded: quiz.requiresManualGrading ? false : true,
+//         studentAnswers: { create: studentAnswersData },
+//       },
+//     });
+
+//     console.log("Updated attempt:", updatedAttempt);
+
+//     const durationSeconds =
+//       (updatedAttempt.end_time!.getTime() - updatedAttempt.start_time.getTime()) / 1000;
+
+//     res.json({ ...updatedAttempt, duration: durationSeconds });
+//   } catch (err) {
+//     console.error("Error submitting attempt:", err);
+//     res.status(500).json({ message: "Internal Server Error" });
+//   }
+// };
+
+
 export const submitAttempt = async (req: Request, res: Response) => {
   try {
     const userId = req.userId;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
     const { attemptId, quizId, answers } = req.body;
 
     const quiz = await prisma.quiz.findUnique({
@@ -612,57 +496,65 @@ export const submitAttempt = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Quiz not found" });
     }
 
-    let points = 0;
-    let totalPoints = 0;
+    const requiresManualGrading = quiz.requiresManualGrading ?? false;
 
-    const studentAnswersData = Object.entries(answers).map(([questionId, choiceOrText]) => {
-      const question = quiz.questions.find(q => q.id === Number(questionId));
-      if (!question) return null;
+    let earnedPoints = 0;   // points earned from auto‑graded MCQs
+    let possiblePoints = 0; // total possible points (MCQ + written)
 
-      totalPoints += question.points;
-      const correctChoice = question.choices.find(c => c.is_correct);
-      let isCorrect = false;
+    const studentAnswersData = Object.entries(answers)
+      .map(([questionId, choiceOrText]) => {
+        const question = quiz.questions.find(q => q.id === Number(questionId));
+        if (!question) return null;
 
-      if (question.type === "mcq" && typeof choiceOrText === "number") {
-        isCorrect = choiceOrText === correctChoice?.id;
-        if (isCorrect) points += question.points;
-      } else if (question.type === "written" && typeof choiceOrText === "string") {
-        if (choiceOrText.trim() !== "") {
-          // points += question.points;
-          isCorrect = false;
+        // always add question points to possible total
+        possiblePoints += question.points;
+
+        const correctChoice = question.choices.find(c => c.is_correct);
+        let isCorrect = false;
+
+        if (question.type.toLowerCase() === "mcq" && typeof choiceOrText === "number") {
+          isCorrect = choiceOrText === correctChoice?.id;
+          if (isCorrect) earnedPoints += question.points;
+        } else if (question.type.toLowerCase() === "written" && typeof choiceOrText === "string") {
+          // written answers are stored but not graded yet
+          if (choiceOrText.trim() !== "") {
+            isCorrect = false;
+          }
         }
-      }
 
-      return {
-        question: { connect: { id: Number(questionId) } },
-        short_text_ans: typeof choiceOrText === "string" ? choiceOrText : null,
-        is_correct: isCorrect,
-        time_taken: 0,
-        feedback: "",
-        selected_ans_id: typeof choiceOrText === "number" ? choiceOrText : 0,
-      };
-    }).filter((ans): ans is NonNullable<typeof ans> => ans !== null);
+        return {
+          question: { connect: { id: Number(questionId) } },
+          short_text_ans: typeof choiceOrText === "string" ? choiceOrText : null,
+          is_correct: isCorrect,
+          time_taken: 0,
+          feedback: "",
+          selected_ans_id: typeof choiceOrText === "number" ? choiceOrText : 0,
+        };
+      })
+      .filter((ans): ans is NonNullable<typeof ans> => ans !== null);
 
-    const score = totalPoints > 0 ? Math.round((points / totalPoints) * 100) : 0;
+    // ✅ store raw earned points, not percentage
+    const score = earnedPoints;
 
     console.log("Submit payload:", {
-  attemptId,
-  quizId,
-  answers,
-  score,
-  points,
-  totalPoints,
-  studentAnswersData,
-});
+      attemptId,
+      quizId,
+      answers,
+      score,
+      earnedPoints,
+      possiblePoints,
+      studentAnswersData,
+    });
 
     const updatedAttempt = await prisma.attempt.update({
       where: { id: Number(attemptId) },
       data: {
-        score,
-        points,
-        totalPoints,
+        score,                  // earned MCQ points only
+        points: possiblePoints, // total possible points (MCQ + written)
+        totalPoints: possiblePoints,
         end_time: new Date(),
         submitted_at: new Date(),
+        isGraded: requiresManualGrading ? false : true,
         studentAnswers: { create: studentAnswersData },
       },
     });

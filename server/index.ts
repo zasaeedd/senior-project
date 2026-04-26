@@ -24,7 +24,7 @@ app.use("/api/quiz", quizRoutes)
 
 app.use("/api/info", studentRoutes);
 
-app.use("/api/Inst", InstructorRoutes);
+app.use("/api/inst", InstructorRoutes);
 
 // starting server 
 const PORT = 5000;

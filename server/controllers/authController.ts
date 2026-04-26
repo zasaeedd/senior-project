@@ -38,6 +38,9 @@ export const login = async (req: Request, res: Response) => {
     }
 };
 
+
+
+
 // get the current user's data from userid
 export const getCurrentUser = async (req: Request, res: Response) => {
     try{

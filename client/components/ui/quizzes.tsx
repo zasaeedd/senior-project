@@ -260,11 +260,21 @@
 // }
 
 
+
+
+
 "use client";
 
 import { useEffect, useState } from "react";
 import Sidebar from "@/components/layout/Sidebar";
 import { useRouter } from "next/navigation";
+
+interface Question {
+  id: number;
+  text: string;
+  type: string; // "mcq" | "written"
+  points: number;
+}
 
 interface Attempt {
   id: number;
@@ -275,6 +285,7 @@ interface Attempt {
   submitted_at: string;
   start_time: string;
   end_time: string;
+  isGraded: boolean;
 }
 
 interface Quiz {
@@ -284,6 +295,7 @@ interface Quiz {
   deadline: Date;
   maxAttempts: number;
   attempts: Attempt[];
+  questions: Question[];
 }
 
 interface Course {
@@ -475,21 +487,54 @@ export default function Quizzes({ courseId }: QuizzesProps) {
         <td className="p-3">
           {quiz.attempts.length > 0 ? (
             (() => {
-              const latestAttempt = quiz.attempts[quiz.attempts.length - 1];
-              const score = latestAttempt.score;
-              const points = latestAttempt.points;
-              const totalPoints = latestAttempt.totalPoints;
 
-              let colorClass = "text-green-600";
-              if (score < 40) colorClass = "text-red-600";
-              else if (score < 60) colorClass = "text-orange-500";
-              else if (score < 80) colorClass = "text-yellow-500";
+const latestAttempt = quiz.attempts[quiz.attempts.length - 1];
+const earned = latestAttempt.score;   // may be percentage (MCQ) or raw points (written)
+const possible = latestAttempt.points;
 
-              return (
-                <span className={`font-semibold ${colorClass}`}>
-                  {points} / {totalPoints} ({score}%)
-                </span>
-              );
+const hasWritten = quiz.questions?.some(
+  (q) => q.type.toLowerCase() === "written"
+) ?? false;
+
+const isPending = hasWritten && !latestAttempt.isGraded;
+
+      if (isPending) {
+        return (
+          <span className="font-semibold text-gray-500">
+            Pending manual grading…
+          </span>
+        );
+      }
+
+// Detect if score is percentage (MCQ case)
+const isPercentageScore = earned > possible; // e.g. 100 vs 7
+
+let displayEarned = earned;
+let percentage = 0;
+
+if (isPercentageScore) {
+  // MCQ case: score is percentage, so convert to raw points
+  percentage = earned; // already percentage
+  displayEarned = Math.round((percentage / 100) * possible);
+} else {
+  // Written/manual case: score is raw points
+  percentage = (earned / possible) * 100;
+}
+
+let colorClass = "text-green-600";
+if (percentage < 40) colorClass = "text-red-600";
+else if (percentage < 60) colorClass = "text-orange-500";
+else if (percentage < 80) colorClass = "text-yellow-500";
+
+return (
+  <span className={`font-semibold ${colorClass}`}>
+    {displayEarned} / {possible} ({percentage.toFixed(0)}%)
+  </span>
+);
+
+
+
+            
             })()
           ) : (
             <span className="text-gray-400 font-bold">No attempts yet</span>

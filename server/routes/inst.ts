@@ -1,16 +1,36 @@
 import express from "express";
 import { authenticate } from "../middleware/authMiddleware";
-import { getInstructorCourses } from "../controllers/instructorController";
-
+import { getInstructorCourses,
+         getInstructorCourseAnalytics,
+         getUngradedAttempts,
+         getSectionDetails,
+         getAttemptDetails,
+         gradeAttempt,
+     } from "../controllers/instructorController";
+ 
 const router = express.Router();
 
-// Get all courses taught by the instructor
+// List all courses + sections taught by the instructor
 router.get("/courses", authenticate, getInstructorCourses);
 
-// // Get analytics for a specific course
-// router.get("/courses/:courseId/analytics", authenticate, getInstructorCourseAnalytics);
+// a route that returns current course + section details (used in details/page.tsx)
+router.get("/section/:id/details", authenticate, getSectionDetails );
 
-// // Get performance breakdown for a specific course
+// A route for getting ungraded written questions (used in pendingQuizzes file)
+router.get("/attempts/ungraded", authenticate, getUngradedAttempts);
+
+
+// Get details of a specific attempt
+router.get("/attempt/:attemptId", authenticate, getAttemptDetails);
+
+//  update the scores with the new scores and recalculate  for the attempts amd maek the attempt as graded.
+router.post("/attempt/:attemptId/grade", authenticate, gradeAttempt);
+
+
+// Get analytics for a specific course (not used)
+// router.get("/courses/:courseId/section/:sectionId/analytics", authenticate, getInstructorCourseAnalytics);
+
+// // Get performance breakdown for a specific course (not used)
 // router.get("/courses/:courseId/performance", authenticate, getInstructorCoursePerformance);
 
 export default router;

@@ -157,7 +157,7 @@ export default function QuizPage() {
   );
   const result = await res.json();
 
-  alert(`Your score: ${result.score}%`);
+  // alert(`Your score: ${result.score}%`);
   router.push(`/student/courses/${courseId}`);
 };
 

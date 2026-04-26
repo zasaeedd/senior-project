@@ -91,6 +91,8 @@ model Quiz {
   created_at  DateTime
   source_type String
   maxAttempts Int
+  requiresManualGrading Boolean @default(false)
+
 
   courseID      Int
   course        Course   @relation(fields: [courseID], references: [id])
@@ -153,6 +155,7 @@ model StudentAnswer {
   is_correct        Boolean
   time_taken        Int
   feedback          String
+  score             Int?
 
   attemptID         Int   
   attempt           Attempt   @relation(fields: [attemptID], references: [id])
@@ -174,6 +177,7 @@ model Attempt {
   points        Int     @default(0)
   totalPoints   Int     @default(0)
   submitted_at  DateTime?
+  isGraded Boolean @default(false)
 
   studentID     Int   
   student       Student   @relation(fields: [studentID], references: [id])
