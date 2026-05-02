@@ -329,6 +329,7 @@ export default function Quizzes({ courseId }: QuizzesProps) {
   const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
   const [studentId, setStudentId] = useState<number | null>(null);
   const [progress, setProgress] = useState<CourseProgress | null>(null);
+// const [attemptNumber, setAttemptNumber] = useState<number | null>(null);
 
   useEffect(() => {
     if (!courseId) return;
@@ -473,17 +474,24 @@ export default function Quizzes({ courseId }: QuizzesProps) {
         </td>
         <td className="p-3">{quiz.duration} mins</td>
         <td className="p-3">
-          <button
-            className={`${
-              deadlinePassed
-                ? "text-gray-400 cursor-not-allowed"
-                : "text-blue-600 hover:underline"
-            }`}
-            disabled={deadlinePassed}
-          >
-            View Leaderboard
-          </button>
-        </td>
+  <button
+    className={`${
+      deadlinePassed
+        ? "text-gray-400 cursor-not-allowed"
+        : "text-blue-600 hover:underline"
+    }`}
+    disabled={deadlinePassed}
+    onClick={() =>
+      !deadlinePassed &&
+      router.push(
+        `/student/courses/${course.id}/quizzes/${quiz.id}/leaderboard`
+      )
+    }
+  >
+    View Leaderboard
+  </button>
+</td>
+
         <td className="p-3">
           {quiz.attempts.length > 0 ? (
             (() => {
@@ -499,6 +507,9 @@ const hasWritten = quiz.questions?.some(
 const isPending = hasWritten && !latestAttempt.isGraded;
 
       if (isPending) {
+              console.log("Quiz test", quiz);
+               console.log("Is Pending?", isPending);
+
         return (
           <span className="font-semibold text-gray-500">
             Pending manual grading…
@@ -592,6 +603,7 @@ return (
       {selectedQuiz && (
         <QuizStartModal
           quiz={selectedQuiz}
+          // attemptNumber={attemptNumber}
           onClose={() => setSelectedQuiz(null)}
           onConfirm={async () => {
             console.log("Starting attempt for quiz:", selectedQuiz?.id);
@@ -623,6 +635,8 @@ return (
 
             const attemptId = data.attemptId;
             const duration = data.duration;
+            // const attemptNumber = data.attemptNumber; 
+            // setAttemptNumber(data.attemptNumber); 
             console.log("Start attempt response:", data);
             setSelectedQuiz(null); // close modal
             router.push(
@@ -637,10 +651,12 @@ return (
 
 function QuizStartModal({
   quiz,
+  // attemptNumber,
   onClose,
   onConfirm,
 }: {
   quiz: Quiz;
+  // attemptNumber: number | null;
   onClose: () => void;
   onConfirm: () => void;
 }) {

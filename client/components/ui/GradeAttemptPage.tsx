@@ -149,7 +149,7 @@ export default function GradeAttemptPage({ attemptId }: { attemptId: number }) {
       </div> */}
 <div className="space-y-6">
   {attempt.quiz.questions
-    // ✅ Only show written questions
+    //  Only show written questions
     .filter((q) => q.type.toLowerCase() === "written")
     .map((q) => {
       const answer = attempt.studentAnswers.find((a) => a.questionID === q.id);

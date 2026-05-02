@@ -1,12 +1,14 @@
 import express from "express";
 import { authenticate } from "../middleware/authMiddleware";
 import { getInstructorCourses,
-         getInstructorCourseAnalytics,
+         getInstructorAnalytics,
          getUngradedAttempts,
          getSectionDetails,
          getAttemptDetails,
          gradeAttempt,
+         viewLeaderboardInst,
      } from "../controllers/instructorController";
+import { viewLeaderboard } from "../controllers/quizController";
  
 const router = express.Router();
 
@@ -28,7 +30,10 @@ router.post("/attempt/:attemptId/grade", authenticate, gradeAttempt);
 
 
 // Get analytics for a specific course (not used)
-// router.get("/courses/:courseId/section/:sectionId/analytics", authenticate, getInstructorCourseAnalytics);
+router.get("/courses/:courseId/section/:sectionId/analytics", authenticate, getInstructorAnalytics);
+
+router.get("/courses/:courseId/section/:sectionId/leaderBoard", authenticate, viewLeaderboardInst);
+
 
 // // Get performance breakdown for a specific course (not used)
 // router.get("/courses/:courseId/performance", authenticate, getInstructorCoursePerformance);

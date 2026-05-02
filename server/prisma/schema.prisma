@@ -178,6 +178,7 @@ model Attempt {
   totalPoints   Int     @default(0)
   submitted_at  DateTime?
   isGraded Boolean @default(false)
+  isActive      Boolean  @default(true)
 
   studentID     Int   
   student       Student   @relation(fields: [studentID], references: [id])

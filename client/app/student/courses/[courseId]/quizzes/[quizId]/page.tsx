@@ -69,6 +69,16 @@ export default function QuizPage() {
   const [answers, setAnswers] = useState<Record<number, number | string>>({});
   const [loading, setLoading] = useState(true);
   
+  
+  useEffect(() => {
+  const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+    e.preventDefault();
+    e.returnValue = "You must submit the quiz before leaving.";
+  };
+  window.addEventListener("beforeunload", handleBeforeUnload);
+  return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+}, []);
+
   useEffect(() => {
     const fetchQuiz = async () => {
       const token = localStorage.getItem("token");

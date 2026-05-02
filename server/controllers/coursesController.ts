@@ -321,7 +321,9 @@ export const getCourseQuizzes = async (req: Request, res: Response) => {
     }
 
     //  Always return the course object, even if quizzes is empty
-    console.log("Course with quizzes:", course);
+
+    
+    // console.log("Course with quizzes:", course);
     return res.json(course);
   } catch (err) {
     console.error(err);
