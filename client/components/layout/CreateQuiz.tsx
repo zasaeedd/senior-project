@@ -237,26 +237,12 @@
 
 // export default CreateQuiz;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 "use client";
 
 import React, { useState, useEffect } from "react";
 import QuestionForm from "@/components/ui/QuestionForm";
 import { useRouter } from "next/navigation";
-
+import FileUploader from "./FileUploader";
 
 interface Choice {
   text: string;
@@ -285,7 +271,6 @@ const CreateQuiz: React.FC<CreateQuizProps> = ({ onClose }) => {
   // const [sectionNumber, setSectionNumber] = useState("");
   const [selectedSections, setSelectedSections] = useState<string[]>([]);
   const [maxAttempts, setmaxAttempt] = useState(1);
-  
 
   // Dropdown data
   const [coursesSections, setCoursesSections] = useState<any[]>([]);
@@ -322,7 +307,7 @@ const CreateQuiz: React.FC<CreateQuizProps> = ({ onClose }) => {
 
   // Filter sections by selected course
   const filteredSections = coursesSections.filter(
-    (sec) => sec.courseCode=== courseCode,
+    (sec) => sec.courseCode === courseCode,
   );
 
   // Handlers for questions
@@ -389,12 +374,12 @@ const CreateQuiz: React.FC<CreateQuizProps> = ({ onClose }) => {
     setQuestions(updated);
   };
   function getLocalDateString() {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, "0");
-  const day = String(today.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
 
   // Submit handler
   const handleSubmit = async (e: React.FormEvent) => {
@@ -404,9 +389,9 @@ const CreateQuiz: React.FC<CreateQuizProps> = ({ onClose }) => {
       title,
       duration,
       deadline,
-      courseCode,      
-      sectionNumbers : selectedSections, 
-      maxAttempts,  
+      courseCode,
+      sectionNumbers: selectedSections,
+      maxAttempts,
       questions,
     };
 
@@ -429,13 +414,37 @@ const CreateQuiz: React.FC<CreateQuizProps> = ({ onClose }) => {
     }
 
     alert("Quiz created successfully!");
-    onClose(); 
-};
+    onClose();
+  };
 
+const [activeTab, setActiveTab] = useState<"manual" | "ai">("manual");
 
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto">
-      {/* Quiz Info */}
+return (
+  <div className="p-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Tab buttons */}
+      <div className="flex space-x-4 mb-4">
+        <button
+          type="button"
+          className={`px-4 py-2 rounded ${
+            activeTab === "manual" ? "bg-blue-500 text-white" : "bg-gray-200"
+          }`}
+          onClick={() => setActiveTab("manual")}
+        >
+          Manual Quiz
+        </button>
+        <button
+          type="button"
+          className={`px-4 py-2 rounded ${
+            activeTab === "ai" ? "bg-blue-500 text-white" : "bg-gray-200"
+          }`}
+          onClick={() => setActiveTab("ai")}
+        >
+          AI Quiz
+        </button>
+      </div>
+
+      {/* Shared Quiz Info — always visible */}
       <div className="border p-4 rounded shadow space-y-4">
         <h2 className="text-lg font-bold">Quiz Details</h2>
 
@@ -463,184 +472,129 @@ const CreateQuiz: React.FC<CreateQuizProps> = ({ onClose }) => {
           name="maxAttempts"
           min="1"
           value={maxAttempts}
-          onChange={(e)=> setmaxAttempt(Number(e.target.value))}
+          onChange={(e) => setmaxAttempt(Number(e.target.value))}
           className="border p-2 w-full rounded"
         />
 
-
         <label className="block font-semibold mb-2">Deadline:</label>
-          <input
-            type="datetime-local"
-            value={deadline}
-            min={new Date().toISOString().slice(0,16)} 
-            onChange={(e) => setDeadline(e.target.value)}
-            className="border p-2 w-full rounded"
-          />
+        <input
+          type="datetime-local"
+          value={deadline}
+          min={new Date().toISOString().slice(0, 16)}
+          onChange={(e) => setDeadline(e.target.value)}
+          className="border p-2 w-full rounded"
+        />
 
-
-
-        {/* Course Dropdown
         <label className="block font-semibold mb-2">Course</label>
         <select
-          value={courseId}
-          onChange={(e) => setCourseId(e.target.value)}
+          value={courseCode}
+          onChange={(e) => setCourseCode(e.target.value)}
           className="border p-2 w-full rounded"
         >
           <option value="">Select Course</option>
           {coursesSections
-            .map((section) => ({
-              courseId: section.courseId,   
-              courseCode: section.courseCode,
-              courseName: section.courseName,
-              sectionId: section.sectionId,
-            }))
             .filter(
               (course, index, self) =>
-                index === self.findIndex((c) => c.courseId === course.courseId),
+                index === self.findIndex((c) => c.courseId === course.courseId)
             )
             .map((course) => (
-              <option key={course.courseId} value={course.courseId}>
+              <option key={course.courseId} value={course.courseCode}>
                 {course.courseCode} - {course.courseName}
               </option>
             ))}
-        </select> */}
+        </select>
 
-
-      
-      <label className="block font-semibold mb-2">Course</label>
-      <select
-        value={courseCode}                     
-        onChange={(e) => setCourseCode(e.target.value)}
-        className="border p-2 w-full rounded"
-      >
-      <option value="">Select Course</option>
-   {coursesSections
-  .filter(
-    (course, index, self) =>
-      index === self.findIndex((c) => c.courseId === course.courseId),
-  )
-  .map((course) => (
-    <option key={course.courseId} value={course.courseCode}>
-      {course.courseCode} - {course.courseName}
-    </option>
-  ))}
-    </select>
-
-
-
-        {/* Section Dropdown
-        <label className="block font-semibold mb-2">Section</label>
-        <select
-          value={sectionId}
-          onChange={(e) => setSectionId(e.target.value)}
-          disabled={!courseId}
-          className="border p-2 w-full rounded"
-        >
-          <option value="">Select Section</option>
+        <label className="block font-semibold mb-2">Sections</label>
+        <div className="space-y-2">
           {filteredSections.map((sec) => (
-            <option key={sec.sectionId} value={sec.sectionId}>
-              Section {sec.sectionId}
-            </option>
+            <label key={sec.sectionId} className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                value={sec.sectionNumber}
+                checked={selectedSections.includes(String(sec.sectionNumber))}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (e.target.checked) {
+                    setSelectedSections([...selectedSections, value]);
+                  } else {
+                    setSelectedSections(
+                      selectedSections.filter((s) => s !== value)
+                    );
+                  }
+                }}
+              />
+              <span>Section {sec.sectionNumber}</span>
+            </label>
           ))}
-        </select> */}
-
-
-        {/* Section Dropdown */}
-      {/* <label className="block font-semibold mb-2">Section</label>
-      <select
-      multiple
-        value={selectedSections}                  
-        onChange={(e) => setSelectedSections(
-          Array.from(e.target.selectedOptions, (option) => option.value)
-        )
-        }
-        
-        disabled={!courseCode}
-        className="border p-2 w-full rounded"
-      >
-        {filteredSections.map((sec) => (
-          <option key={sec.sectionId} value={sec.sectionNumber}>
-            Section {sec.sectionNumber}
-          </option>
-        ))}
-      </select> */}
-
-      <label className="block font-semibold mb-2">Sections</label>
-<div className="space-y-2">
-  {filteredSections.map((sec) => (
-    <label key={sec.sectionId} className="flex items-center space-x-2">
-      <input
-        type="checkbox"
-        value={sec.sectionNumber}
-        checked={selectedSections.includes(String(sec.sectionNumber))}
-        onChange={(e) => {
-          const value = e.target.value;
-          if (e.target.checked) {
-            setSelectedSections([...selectedSections, value]);
-          } else {
-            setSelectedSections(selectedSections.filter((s) => s !== value));
-          }
-        }}
-      />
-      <span>Section {sec.sectionNumber}</span>
-    </label>
-  ))}
-</div>
-
+        </div>
       </div>
 
-      {/* Questions */}
-      <div className="space-y-4">
-        {questions.map((q, qIndex) => (
-          <QuestionForm
-            key={qIndex}
-            index={qIndex}
-            question={q}
-            onTextChange={handleTextChange}
-            onTypeChange={handleTypeChange}
-            onPointsChange={handlePointsChange}
-            onDifficultyChange={handleDifficultyChange}
-            onChoiceTextChange={handleChoiceTextChange}
-            onCorrectChoiceChange={handleCorrectChoiceChange}
-            onAddChoice={handleAddChoice}
-            onRemove={handleRemoveQuestion}
-          />
-        ))}
-      </div>
+      {/* Tab-specific content */}
+      {activeTab === "manual" && (
+        <>
+          {/* Questions */}
+          <div className="space-y-4">
+            {questions.map((q, qIndex) => (
+              <QuestionForm
+                key={qIndex}
+                index={qIndex}
+                question={q}
+                onTextChange={handleTextChange}
+                onTypeChange={handleTypeChange}
+                onPointsChange={handlePointsChange}
+                onDifficultyChange={handleDifficultyChange}
+                onChoiceTextChange={handleChoiceTextChange}
+                onCorrectChoiceChange={handleCorrectChoiceChange}
+                onAddChoice={handleAddChoice}
+                onRemove={handleRemoveQuestion}
+              />
+            ))}
+          </div>
 
-      {/* Add Question Button */}
-      <button
-        type="button"
-        onClick={() =>
-          setQuestions([
-            ...questions,
-            {
-              text: "",
-              type: "mcq",
-              points: 0,
-              difficulty: "easy",
-              choices: [
-                { text: "", is_correct: false },
-                { text: "", is_correct: false },
-              ],
-            },
-          ])
-        }
-        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-      >
-        + Add Question
-      </button>
+          {/* Add Question Button */}
+          <button
+            type="button"
+            onClick={() =>
+              setQuestions([
+                ...questions,
+                {
+                  text: "",
+                  type: "mcq",
+                  points: 0,
+                  difficulty: "easy",
+                  choices: [
+                    { text: "", is_correct: false },
+                    { text: "", is_correct: false },
+                  ],
+                },
+              ])
+            }
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          >
+            + Add Question
+          </button>
+        </>
+      )}
 
-      {/* Submit */}
+      {activeTab === "ai" && (
+        <>
+          <h2 className="text-lg font-bold">AI Quiz Generator</h2>
+          <FileUploader />
+          {/* Later: add AI generation options */}
+        </>
+      )}
+
+      {/* Shared submit button */}
       <button
         type="submit"
-        className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+        className="bg-green-500 text-white px-4 py-2 rounded"
       >
         Create Quiz
       </button>
     </form>
-  );
-};
+  </div>
+);
 
+};
 
 export default CreateQuiz;
