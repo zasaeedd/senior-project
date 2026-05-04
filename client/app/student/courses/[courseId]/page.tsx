@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import Quizzes from "@/components/ui/quizzes"; // import your quizzes component
+import Quizzes from "@/components/ui/quizzes";
 
 export default function CoursePage() {
   const { courseId } = useParams();

@@ -320,11 +320,27 @@ const sectionId = Number(req.params.sectionId);
       include: { studentAnswers: true },
     });
 
-    return res.status(200).json({
-      message: "Quiz retrieved successfully",
-      quiz,
-      attempt: attempt || null, 
-    });
+    
+
+const unlockedPowerUps = await prisma.studentPowerUp.findMany({
+  where: { studentID },
+  include: { powerup: true } // make sure 'powerup' has a 'name'
+});
+
+return res.status(200).json({
+  message: "Quiz retrieved successfully",
+  quiz,
+  attempt: attempt || null,
+unlockedPowerUps: unlockedPowerUps.map(up => ({
+  id: up.powerup.id,
+  name: up.powerup.name.replace("/", "-"), // normalize
+  quantity: up.quantity
+}))
+
+});
+
+
+
  
   } catch (err) {
     console.error("Error retrieving quiz: ", err);
@@ -375,55 +391,18 @@ export const startAttempt = async (req: Request, res: Response) => {
 
         }
 
-//         const existingAttempt = await prisma.attempt.findFirst({
-//   where: {
-//     quizID: Number(quizID),
-//     studentID: studentId,
-//     submitted_at: null, // not submitted yet
-//   },
-// });
-
-// if (existingAttempt) {
-//   // count how many submitted attempts this student already has
-//   const submittedAttemptsCount = await prisma.attempt.count({
-//     where: {
-//       quizID: Number(quizID),
-//       studentID: studentId,
-//       submitted_at: { not: null },
-//     },
-//   });
-
-//   return res.json({
-//     attemptId: existingAttempt.id,
-//     quizId: quiz.id,
-//     duration: quiz.duration,
-//     deadline: quiz.deadline,
-//     attemptNumber: submittedAttemptsCount + 1,
-//   });
-
-// }
     const attempt = await prisma.attempt.create({
       data: {
         studentID: studentId,
         quizID,
         start_time: new Date(),
-        // isActive:true,
       },
     });
-
-//     const submittedAttemptsCount = await prisma.attempt.count({
-//   where: {
-//     quizID: Number(quizID),
-//     studentID: studentId,
-//     submitted_at: { not: null },
-//   },
-// });
 
     res.json({ attemptId: attempt.id,
               quizId: quiz.id,
               duration: quiz.duration,
               deadline: quiz.deadline,
-              // attemptNumber: submittedAttemptsCount+1,
     });
     console.log("Created attempt:", attempt);
   } catch (err) {
@@ -628,9 +607,6 @@ export const submitAttempt = async (req: Request, res: Response) => {
 
         const studentId = studentUser.student.id;
 
-
-
-
       const submittedAttemptsCount = await prisma.attempt.count({
         where: {
           quizID: Number(quizId),
@@ -639,8 +615,6 @@ export const submitAttempt = async (req: Request, res: Response) => {
         },
       });
 
-// Next attempt number = submitted attempts + 1
-// const nextAttemptNumber = submittedAttemptsCount + 1;
 
     res.json({ ...updatedAttempt, duration: durationSeconds });
   } catch (err) {
@@ -654,6 +628,10 @@ export const submitAttempt = async (req: Request, res: Response) => {
 
 
 
+
+
+
+// ------- leaderboard for student
 
 export const viewLeaderboard = async (req: Request, res: Response) => {
   try {
@@ -734,7 +712,7 @@ export const viewLeaderboard = async (req: Request, res: Response) => {
         ? a.end_time.getTime() - a.start_time.getTime()
         : 0;
 
-    const earnedPoints = a.score ?? 0; // safe against null
+    const earnedPoints = a.score ?? 0; 
     const totalPoints = a.quiz.questions.reduce(
       (sum, q) => sum + (q.points ?? 0),
       0
@@ -768,5 +746,115 @@ export const viewLeaderboard = async (req: Request, res: Response) => {
   } catch (err) {
     console.error("Error building leaderboard:", err);
     res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+
+
+
+
+
+
+
+
+export const usePowerUp = async ( req: Request, res: Response) => {
+  try {
+    const quizId = Number(req.params.quizId);
+     const userId = req.userId; 
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    // Resolve student record for this user
+    const student = await prisma.student.findUnique({
+      where: { userID: Number(userId) },
+    });
+
+    // If not a student, block
+    if (!student) {
+      return res.status(403).json({ message: "Only students can view leaderboard" });
+    }
+
+    const studentId = student.id;
+
+    const {powerupId, questionId} = req.body;
+    const inventory = await prisma.studentPowerUp.findUnique({
+      where: { studentID_powerupID: { studentID: studentId, powerupID: powerupId } }
+    });
+
+    if (!inventory || inventory.quantity <= 0) {
+      return res.status(400).json({ message: "No PowerUps available" });
+    }
+
+    // Apply effect depending on powerupId
+    let effectPayload: any = {};
+
+    switch (powerupId) {
+      case 1: // Extra Time
+        // Extend quiz timer by +60 seconds
+        await prisma.attempt.updateMany({
+          where: { studentID: studentId, quizID: quizId, isGraded: false },
+          data: { extraTime: { increment: 60 } }
+        });
+        effectPayload = { type: "Extra Time", addedSeconds: 60 };
+        break;
+
+      case 2: // Time Freeze
+        // Pause timer for 45 seconds (frontend handles countdown pause)
+        effectPayload = { type: "Time Freeze", freezeSeconds: 30 };
+        break;
+
+      case 3: // 50/50
+  if (!questionId) {
+    return res.status(400).json({ message: "Question ID required for 50/50" });
+  }
+
+  const question = await prisma.question.findUnique({
+    where: { id: questionId },
+    include: { choices: true }
+  });
+  if (!question) return res.status(404).json({ message: "Question not found" });
+
+  const wrongOptions = question.choices.filter(c => !c.is_correct);
+
+  let toRemove: typeof wrongOptions = [];
+
+  if (question.choices.length === 4) {
+    // remove 2 wrong choices
+    toRemove = wrongOptions.sort(() => 0.5 - Math.random()).slice(0, 2);
+  } else if (question.choices.length === 3) {
+    // remove 1 wrong choice
+    toRemove = wrongOptions.sort(() => 0.5 - Math.random()).slice(0, 1);
+  } else if (question.choices.length === 2) {
+    // don’t remove anything, don’t decrement inventory
+    return res.json({
+      message: "Cannot use 50/50 on 2-choice questions",
+      effect: { type: "50/50", removedChoices: [] }
+    });
+  }
+
+  const removedChoices = toRemove.map(o => o.id);
+  console.log("50/50 effect removing choices:", removedChoices);
+
+  effectPayload = { type: "50/50", removedChoices };
+  
+  // Decrement inventory only if we didn’t return early
+await prisma.studentPowerUp.update({
+  where: { studentID_powerupID: { studentID: studentId, powerupID: powerupId } },
+  data: { quantity: { decrement: 1 } }
+});
+  break;
+
+    }
+
+
+    return res.json({
+      message: `PowerUp used successfully`,
+      effect: effectPayload
+    });
+  } catch (err) {
+    console.error("Error using PowerUp:", err);
+    res.status(500).json({ message: "Error using PowerUp" });
   }
 };

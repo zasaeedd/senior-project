@@ -1,7 +1,7 @@
 import express from "express";
 import { authenticate } from "../middleware/authMiddleware";
 import { getStudentCourses , getStudentCoursesWithQuizzes} from "../controllers/coursesController";
-import { getCourseQuizzes , getCourseProgress, getStudentPerformance } from "../controllers/coursesController";
+import { getCourseQuizzes , getCourseProgress, getStudentPerformance, getStudentBadges } from "../controllers/coursesController";
 
 
 const router = express.Router();
@@ -14,6 +14,9 @@ router.get("/students/courses/:courseId", authenticate, getCourseQuizzes)
 router.get("/students/courses/:courseId/progress", authenticate, getCourseProgress)
 router.get("/students/performance", authenticate, getStudentPerformance)
 // router.get("/students/courses/:courseId/performance", authenticate, getStudentPerformance)
+
+
+router.get("/students/badges", authenticate, getStudentBadges);
 
 
 export default router;

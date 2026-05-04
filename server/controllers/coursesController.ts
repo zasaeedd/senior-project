@@ -322,7 +322,7 @@ export const getCourseQuizzes = async (req: Request, res: Response) => {
 
     //  Always return the course object, even if quizzes is empty
 
-    
+
     // console.log("Course with quizzes:", course);
     return res.json(course);
   } catch (err) {
@@ -451,4 +451,36 @@ export const getStudentPerformance = async (req: Request, res: Response) => {
 
   res.json(performance);
 };
+
+
+export const getStudentBadges = async (req: Request, res: Response) => {
+    const userId = req.userId;
+
+  const studentUser = await prisma.user.findUnique({
+    where: { userId: Number(userId) },
+    include: { student: true },
+  });
+
+  if (!studentUser?.student) {
+    return res.status(403).json({ message: "Only students can view performance history" });
+  }
+  const studId = studentUser.student.id;
+
+  console.log("Student Id for badge:", studId)
+
+  const badges = await prisma.studentBadge.findMany({
+    where: { studentID : studId },
+    include: { badge: true }
+  });
+
+  res.json(
+    badges.map(sb => ({
+      id: sb.badge.id,
+      name: sb.badge.name,
+      description: sb.badge.description,
+      imageUrl: sb.badge.imageUrl 
+    }))
+  );
+}
+
 

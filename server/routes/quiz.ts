@@ -1,6 +1,6 @@
 import express from "express";
 // import { createQuiz, getQuiz, getInstructorSections, submitQuizAttempt } from "../controllers/quizController";
-import { createQuiz, getQuiz, getInstructorSections, submitAttempt, startAttempt, viewLeaderboard } from "../controllers/quizController";
+import { createQuiz, getQuiz, getInstructorSections, submitAttempt, startAttempt, viewLeaderboard, usePowerUp } from "../controllers/quizController";
 
 import { authenticate } from "../middleware/authMiddleware";
 
@@ -24,6 +24,8 @@ router.get(
   authenticate,
   viewLeaderboard
 );
+
+router.post("/students/courses/:courseId/quizzes/:quizId/usePowerUp",  authenticate, usePowerUp );
 
 
 

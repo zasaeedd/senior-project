@@ -179,6 +179,7 @@ model Attempt {
   submitted_at  DateTime?
   isGraded Boolean @default(false)
   isActive      Boolean  @default(true)
+  extraTime     Int      @default(0)
 
   studentID     Int   
   student       Student   @relation(fields: [studentID], references: [id])
@@ -194,6 +195,7 @@ model Badge {
   name              String
   description       String
   unlock_condition  String
+  imageUrl          String
 
   badges StudentBadge[]
 
@@ -202,7 +204,7 @@ model Badge {
 model StudentBadge {
   id                Int  @id @default(autoincrement())
 
-  earned_at  DateTime
+  earned_at  DateTime    @default(now())
 
   studentID     Int   
   student       Student   @relation(fields: [studentID], references: [id])
@@ -236,7 +238,7 @@ model StudentPowerUp {
   powerupID     Int   
   powerup       PowerUp   @relation(fields: [powerupID], references: [id])
 
-  @@unique([studentID,powerupID])
+  @@unique([studentID,powerupID], name: "studentID_powerupID")
 }
 
 model Streak {

@@ -442,6 +442,11 @@ export const getAttemptDetails = async (req: Request, res: Response) => {
 
 
 
+
+
+
+
+
 export const gradeAttempt = async (req: Request, res: Response) => {
   try {
     const attemptId = Number(req.params.attemptId);
@@ -487,9 +492,200 @@ export const gradeAttempt = async (req: Request, res: Response) => {
       },
     });
 
-    res.json({ message: "Grades saved", score: totalScore, points: totalPoints });
+
+// -------- xp part
+console.log(">>> Starting XP calculation for student:", attempt.studentID);
+const latestAttempts = await prisma.attempt.findMany({
+  where: {
+    studentID: attempt.studentID,
+    isGraded: true,
+    quiz: { sectionID: attempt.quiz.sectionID }
+  },
+  orderBy: { submitted_at: 'desc' }
+});
+
+
+console.log("Fetched attempts:", latestAttempts.map(a => ({
+  attemptId: a.id,
+  quizId: a.quizID,
+  score: a.score,
+  submitted_at: a.submitted_at
+})));
+
+// Group by quizID, always keep the newest (overwrite older ones)
+const latestByQuiz: Record<number, typeof latestAttempts[0]> = {};
+for (const a of latestAttempts) {
+  if (!latestByQuiz[a.quizID]) {
+    latestByQuiz[a.quizID] = a;
+    console.log(`Keeping latest attempt for quiz ${a.quizID}:`, {
+      attemptId: a.id,
+      score: a.score,
+      submitted_at: a.submitted_at
+    });
+  } else {
+    console.log(`Skipping older attempt for quiz ${a.quizID}:`, {
+      attemptId: a.id,
+      score: a.score,
+      submitted_at: a.submitted_at
+    });
+  }
+}
+
+const totalXp = Object.values(latestByQuiz).reduce(
+  (sum, a) => sum + (a.score ?? 0) * 2,
+  0
+);
+
+console.log("XP after grouping latest attempts:", totalXp);
+
+    await prisma.enrollment.update({
+      where: { studentID_sectionID: { studentID: attempt.studentID, sectionID: attempt.quiz.sectionID } },
+      data: { xp: totalXp }
+    });
+
+console.log("Enrollment XP updated to:", totalXp);
+    // Fetch updated enrollment
+    const enrollment = await prisma.enrollment.findUnique({
+      where: { studentID_sectionID: { studentID: attempt.studentID, sectionID: attempt.quiz.sectionID } }
+    });
+  const unlockedPowerUps: { id: number; name: string; quantity: number }[] = [];
+
+    if (enrollment) {
+  // thresholds for each power-up
+  const powerUps = [
+    { id: 1, name: "Extra Time", thresholds: [20, 50, 100, 200] },
+    { id: 2, name: "Time Freeze", thresholds: [50, 150, 300] },
+    { id: 3, name: "50/50", thresholds: [70, 200, 400] }
+  ];
+
+
+  for (const p of powerUps) {
+    const unlockedCount = p.thresholds.filter(t => enrollment.xp >= t).length;
+
+    const updated = await prisma.studentPowerUp.upsert({
+      where: { studentID_powerupID: { studentID: attempt.studentID, powerupID: p.id } },
+      update: { quantity: unlockedCount },
+      create: { studentID: attempt.studentID, powerupID: p.id, quantity: unlockedCount }
+    });
+
+    unlockedPowerUps.push({
+      id: p.id,
+      name: p.name,
+      quantity: updated.quantity
+    });
+  }
+    }
+
+      // --------- Badge part
+
+        const badgesToUnlock: { id: number; name: string }[] = [];
+
+        // High Achiever
+        const lateAttempts = await prisma.attempt.findMany({
+            where: { studentID: attempt.studentID, isGraded: true },
+            include: { quiz: true }
+          });
+
+          // Count quizzes with ≥80% score
+          const highAchieverCount = lateAttempts.filter(a => (a.score ?? 0) / (a.points ?? 1) >= 0.8).length;
+
+          if (highAchieverCount >= 4) {
+            badgesToUnlock.push({ id: 1, name: "High Achiever" });
+          }
+
+
+        // Comeback Star
+       const quizzesWithComeback = await prisma.quiz.findMany({
+            where: { sectionID: attempt.quiz.sectionID },
+            include: {
+              attempts: {
+                where: { studentID: attempt.studentID, isGraded: true },
+                orderBy: { submitted_at: 'desc' }
+              }
+            }
+          });
+
+          let comebackCount = 0;
+          for (const q of quizzesWithComeback) {
+           if (q.attempts.length >= 2) {
+            const latest = q.attempts[0]!;
+            const prev = q.attempts[1]!;
+
+            if ((latest.score ?? 0) >= 2 * (prev.score ?? 0)) {
+              comebackCount++;
+            }
+          }
+
+          }
+
+          if (comebackCount >= 3) {
+            badgesToUnlock.push({ id: 2, name: "Comeback Star" });
+          }
+
+          // Quick learner badge
+  
+          if (attempt.start_time && attempt.end_time && attempt.quiz.duration) {
+            const timeTaken = (attempt.end_time.getTime() - attempt.start_time.getTime()) / 1000; // seconds
+            const allottedTime = attempt.quiz.duration * 60; // assuming duration is stored in minutes
+
+            if (timeTaken <= allottedTime / 2) {
+              badgesToUnlock.push({ id: 3, name: "Quick Learner" });
+            }
+          }
+
+
+          // Streak master badge
+          const orderedAttempts = await prisma.attempt.findMany({
+              where: { studentID: attempt.studentID, isGraded: true },
+              orderBy: { submitted_at: 'asc' }
+            });
+
+            let streak = 0;
+            let maxStreak = 0;
+            for (const a of orderedAttempts) {
+              if ((a.score ?? 0) === (a.points ?? 0)) {
+                streak++;
+                maxStreak = Math.max(maxStreak, streak);
+              } else {
+                streak = 0;
+              }
+            }
+
+            if (maxStreak >= 3) {
+              badgesToUnlock.push({ id: 4, name: "Streak Master" });
+            }
+
+            // Leaderboard topper badge
+            const leaderboard = await prisma.enrollment.findMany({
+                where: { sectionID: attempt.quiz.sectionID },
+                orderBy: { xp: 'desc' }
+              });
+
+              if (leaderboard.length > 0 && leaderboard[0]!.studentID === attempt.studentID) {
+                badgesToUnlock.push({ id: 5, name: "Leaderboard Topper" });
+              }
+
+
+        // Save unlocked badges
+        for (const b of badgesToUnlock) {
+        await prisma.studentBadge.upsert({
+          where: { studentID_badgeID: { studentID: attempt.studentID, badgeID: b.id } },
+          update: {},
+          create: { studentID: attempt.studentID, badgeID: b.id, earned_at: new Date() }
+        });
+      }
+
+
+  return res.json({
+    message: "Grades saved",
+    score: totalScore,
+    points: totalPoints,
+    xpEarned: totalScore * 2,
+    totalXp: enrollment?.xp,
+    unlockedPowerUps
+  });
   } catch (err) {
-    console.error(err);
+console.error("Error grading attempt:", err);
     res.status(500).json({ message: "Error saving grades" });
   }
 };

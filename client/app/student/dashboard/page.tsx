@@ -199,10 +199,16 @@ interface Course {
   crs_code: string;
   crs_name: string;
   sectionNumber: number;
-  quizzes: Quiz[]; //  not optional
+  quizzes: Quiz[]; 
 }
 
 
+interface Badge {
+  id: number;
+  name: string;
+  description: string;
+  imageUrl: string;
+}
 
 interface Performance {
   quizId: number;
@@ -217,9 +223,23 @@ interface Performance {
 
 const DashboardPage: React.FC = () => {
 
-  const [performance, setPerformance] = useState<Performance[]>([]);
+const [performance, setPerformance] = useState<Performance[]>([]);
 const [courses, setCourses] = useState<any[]>([]);
 const [coursesWithQuizzes, setCoursesWithQuizzes] = useState<any[]>([]); // for donut chart
+const [studentBadges, setStudentBadges] = useState<Badge[]>([]);
+
+
+useEffect(() => {
+  const fetchBadges = async () => {
+    const token = localStorage.getItem("token");
+    const res = await fetch("http://localhost:5000/api/info/students/badges", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    setStudentBadges(data);
+  };
+  fetchBadges();
+}, []);
 
   // fetch performance data
   useEffect(() => {
@@ -261,7 +281,7 @@ useEffect(() => {
   fetchCoursesWithQuizzes();
 }, []);
 
-  
+
 // Filter invalid dates
 const validPerformance = performance.filter(p => {
   const d = new Date(p.submitted_at ?? Date.now());
@@ -553,17 +573,33 @@ console.log("Pie chart breakdown:", {
           </main>
 
           {/* Right column */}
-          <aside className="w-80">
-            <div className="sticky top-6 space-y-4">
-              <ProfileCard />
-              <div className="bg-white p-4 rounded-lg shadow">
-                <h4 className="font-semibold mb-2">Badges</h4>
-                <div className="h-24 flex items-center justify-center text-gray-400">
-                  Placeholder for badges / frames
-                </div>
-              </div>
-            </div>
-          </aside>
+      <aside className="w-80">
+  <div className="sticky top-6 space-y-4">
+    <ProfileCard />
+<div className="bg-white p-5 rounded-lg shadow">
+  <h4 className="font-semibold mb-2">Badges:</h4>
+
+  <div className="grid grid-cols-3 gap-1 place-items-center">
+  {studentBadges.map((badge) => (
+    <div key={badge.id} className="flex flex-col items-center">
+      <img
+        src={badge.imageUrl}
+        alt={badge.name}
+        className="w-32 h-32 object-contain"
+        title={badge.name} 
+      />
+    </div>
+  ))}
+</div>
+
+</div>
+
+
+
+  </div>
+</aside>
+
+
         </div>
       </div>
     </div>
