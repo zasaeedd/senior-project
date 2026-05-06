@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "Attempt" ALTER COLUMN "score" DROP NOT NULL,
+ALTER COLUMN "submitted_at" DROP NOT NULL,
+ALTER COLUMN "end_time" DROP NOT NULL;

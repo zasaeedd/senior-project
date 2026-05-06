@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 
 async function hashPassword() {
-    const plainPassword = "234567";  // plain password
+    const plainPassword = "000000";  // plain password
 
     const hashed = await bcrypt.hash(plainPassword, 10);
     
