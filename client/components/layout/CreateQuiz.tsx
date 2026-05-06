@@ -417,184 +417,187 @@ const CreateQuiz: React.FC<CreateQuizProps> = ({ onClose }) => {
     onClose();
   };
 
-const [activeTab, setActiveTab] = useState<"manual" | "ai">("manual");
+  const [activeTab, setActiveTab] = useState<"manual" | "ai">("manual");
 
-return (
-  <div className="p-4">
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Tab buttons */}
-      <div className="flex space-x-4 mb-4">
-        <button
-          type="button"
-          className={`px-4 py-2 rounded ${
-            activeTab === "manual" ? "bg-blue-500 text-white" : "bg-gray-200"
-          }`}
-          onClick={() => setActiveTab("manual")}
-        >
-          Manual Quiz
-        </button>
-        <button
-          type="button"
-          className={`px-4 py-2 rounded ${
-            activeTab === "ai" ? "bg-blue-500 text-white" : "bg-gray-200"
-          }`}
-          onClick={() => setActiveTab("ai")}
-        >
-          AI Quiz
-        </button>
-      </div>
-
-      {/* Shared Quiz Info — always visible */}
-      <div className="border p-4 rounded shadow space-y-4">
-        <h2 className="text-lg font-bold">Quiz Details</h2>
-
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Quiz Title"
-          className="border p-2 w-full rounded"
-        />
-
-        <label className="block font-semibold mb-2">Duration (minutes)</label>
-        <input
-          type="number"
-          value={duration}
-          min={1}
-          onChange={(e) => setDuration(Number(e.target.value))}
-          placeholder="Duration (minutes)"
-          className="border p-2 w-full rounded"
-        />
-
-        <label className="block font-semibold mb-2">Max Attempts:</label>
-        <input
-          type="number"
-          name="maxAttempts"
-          min="1"
-          value={maxAttempts}
-          onChange={(e) => setmaxAttempt(Number(e.target.value))}
-          className="border p-2 w-full rounded"
-        />
-
-        <label className="block font-semibold mb-2">Deadline:</label>
-        <input
-          type="datetime-local"
-          value={deadline}
-          min={new Date().toISOString().slice(0, 16)}
-          onChange={(e) => setDeadline(e.target.value)}
-          className="border p-2 w-full rounded"
-        />
-
-        <label className="block font-semibold mb-2">Course</label>
-        <select
-          value={courseCode}
-          onChange={(e) => setCourseCode(e.target.value)}
-          className="border p-2 w-full rounded"
-        >
-          <option value="">Select Course</option>
-          {coursesSections
-            .filter(
-              (course, index, self) =>
-                index === self.findIndex((c) => c.courseId === course.courseId)
-            )
-            .map((course) => (
-              <option key={course.courseId} value={course.courseCode}>
-                {course.courseCode} - {course.courseName}
-              </option>
-            ))}
-        </select>
-
-        <label className="block font-semibold mb-2">Sections</label>
-        <div className="space-y-2">
-          {filteredSections.map((sec) => (
-            <label key={sec.sectionId} className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                value={sec.sectionNumber}
-                checked={selectedSections.includes(String(sec.sectionNumber))}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  if (e.target.checked) {
-                    setSelectedSections([...selectedSections, value]);
-                  } else {
-                    setSelectedSections(
-                      selectedSections.filter((s) => s !== value)
-                    );
-                  }
-                }}
-              />
-              <span>Section {sec.sectionNumber}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      {/* Tab-specific content */}
-      {activeTab === "manual" && (
-        <>
-          {/* Questions */}
-          <div className="space-y-4">
-            {questions.map((q, qIndex) => (
-              <QuestionForm
-                key={qIndex}
-                index={qIndex}
-                question={q}
-                onTextChange={handleTextChange}
-                onTypeChange={handleTypeChange}
-                onPointsChange={handlePointsChange}
-                onDifficultyChange={handleDifficultyChange}
-                onChoiceTextChange={handleChoiceTextChange}
-                onCorrectChoiceChange={handleCorrectChoiceChange}
-                onAddChoice={handleAddChoice}
-                onRemove={handleRemoveQuestion}
-              />
-            ))}
-          </div>
-
-          {/* Add Question Button */}
+  return (
+    <div className="p-4">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Tab buttons */}
+        <div className="flex space-x-4 mb-4">
           <button
             type="button"
-            onClick={() =>
-              setQuestions([
-                ...questions,
-                {
-                  text: "",
-                  type: "mcq",
-                  points: 0,
-                  difficulty: "easy",
-                  choices: [
-                    { text: "", is_correct: false },
-                    { text: "", is_correct: false },
-                  ],
-                },
-              ])
-            }
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            className={`px-4 py-2 rounded ${
+              activeTab === "manual" ? "bg-blue-500 text-white" : "bg-gray-200"
+            }`}
+            onClick={() => setActiveTab("manual")}
           >
-            + Add Question
+            Manual Quiz
           </button>
-        </>
-      )}
+          <button
+            type="button"
+            className={`px-4 py-2 rounded ${
+              activeTab === "ai" ? "bg-blue-500 text-white" : "bg-gray-200"
+            }`}
+            onClick={() => setActiveTab("ai")}
+          >
+            AI Quiz
+          </button>
+        </div>
 
-      {activeTab === "ai" && (
-        <>
-          <h2 className="text-lg font-bold">AI Quiz Generator</h2>
-          <FileUploader />
-          {/* Later: add AI generation options */}
-        </>
-      )}
+        {/* Shared Quiz Info — always visible */}
+        <div className="border p-4 rounded shadow space-y-4">
+          <h2 className="text-lg font-bold">Quiz Details</h2>
 
-      {/* Shared submit button */}
-      <button
-        type="submit"
-        className="bg-green-500 text-white px-4 py-2 rounded"
-      >
-        Create Quiz
-      </button>
-    </form>
-  </div>
-);
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Quiz Title"
+            className="border p-2 w-full rounded"
+          />
 
+          <label className="block font-semibold mb-2">Duration (minutes)</label>
+          <input
+            type="number"
+            value={duration}
+            min={1}
+            onChange={(e) => setDuration(Number(e.target.value))}
+            placeholder="Duration (minutes)"
+            className="border p-2 w-full rounded"
+          />
+
+          <label className="block font-semibold mb-2">Max Attempts:</label>
+          <input
+            type="number"
+            name="maxAttempts"
+            min="1"
+            value={maxAttempts}
+            onChange={(e) => setmaxAttempt(Number(e.target.value))}
+            className="border p-2 w-full rounded"
+          />
+
+          <label className="block font-semibold mb-2">Deadline:</label>
+          <input
+            type="datetime-local"
+            value={deadline}
+            min={new Date().toISOString().slice(0, 16)}
+            onChange={(e) => setDeadline(e.target.value)}
+            className="border p-2 w-full rounded"
+          />
+
+          <label className="block font-semibold mb-2">Course</label>
+          <select
+            value={courseCode}
+            onChange={(e) => setCourseCode(e.target.value)}
+            className="border p-2 w-full rounded"
+          >
+            <option value="">Select Course</option>
+            {coursesSections
+              .filter(
+                (course, index, self) =>
+                  index ===
+                  self.findIndex((c) => c.courseId === course.courseId),
+              )
+              .map((course) => (
+                <option key={course.courseId} value={course.courseCode}>
+                  {course.courseCode} - {course.courseName}
+                </option>
+              ))}
+          </select>
+
+          <label className="block font-semibold mb-2">Sections</label>
+          <div className="space-y-2">
+            {filteredSections.map((sec) => (
+              <label
+                key={sec.sectionId}
+                className="flex items-center space-x-2"
+              >
+                <input
+                  type="checkbox"
+                  value={sec.sectionNumber}
+                  checked={selectedSections.includes(String(sec.sectionNumber))}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (e.target.checked) {
+                      setSelectedSections([...selectedSections, value]);
+                    } else {
+                      setSelectedSections(
+                        selectedSections.filter((s) => s !== value),
+                      );
+                    }
+                  }}
+                />
+                <span>Section {sec.sectionNumber}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Tab-specific content */}
+        {activeTab === "manual" && (
+          <>
+            {/* Questions */}
+            <div className="space-y-4">
+              {questions.map((q, qIndex) => (
+                <QuestionForm
+                  key={qIndex}
+                  index={qIndex}
+                  question={q}
+                  onTextChange={handleTextChange}
+                  onTypeChange={handleTypeChange}
+                  onPointsChange={handlePointsChange}
+                  onDifficultyChange={handleDifficultyChange}
+                  onChoiceTextChange={handleChoiceTextChange}
+                  onCorrectChoiceChange={handleCorrectChoiceChange}
+                  onAddChoice={handleAddChoice}
+                  onRemove={handleRemoveQuestion}
+                />
+              ))}
+            </div>
+
+            {/* Add Question Button */}
+            <button
+              type="button"
+              onClick={() =>
+                setQuestions([
+                  ...questions,
+                  {
+                    text: "",
+                    type: "mcq",
+                    points: 0,
+                    difficulty: "easy",
+                    choices: [
+                      { text: "", is_correct: false },
+                      { text: "", is_correct: false },
+                    ],
+                  },
+                ])
+              }
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            >
+              + Add Question
+            </button>
+          </>
+        )}
+
+        {activeTab === "ai" && (
+          <>
+            <h2 className="text-lg font-bold">AI Quiz Generator</h2>
+            <FileUploader />
+            
+          </>
+        )}
+
+        {/* Shared submit button */}
+        <button
+          type="submit"
+          className="bg-green-500 text-white px-4 py-2 rounded"
+        >
+          Create Quiz
+        </button>
+      </form>
+    </div>
+  );
 };
 
 export default CreateQuiz;

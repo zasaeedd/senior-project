@@ -494,6 +494,8 @@ export const gradeAttempt = async (req: Request, res: Response) => {
 
 
 // -------- xp part
+
+
 console.log(">>> Starting XP calculation for student:", attempt.studentID);
 const latestAttempts = await prisma.attempt.findMany({
   where: {
@@ -595,32 +597,36 @@ console.log("Enrollment XP updated to:", totalXp);
 
 
         // Comeback Star
-       const quizzesWithComeback = await prisma.quiz.findMany({
-            where: { sectionID: attempt.quiz.sectionID },
-            include: {
-              attempts: {
-                where: { studentID: attempt.studentID, isGraded: true },
-                orderBy: { submitted_at: 'desc' }
-              }
-            }
-          });
+       
+const quizzesWithComeback = await prisma.quiz.findMany({
+  where: { sectionID: attempt.quiz.sectionID },
+  include: {
+    attempts: {
+      where: { studentID: attempt.studentID, isGraded: true },
+      orderBy: { submitted_at: 'desc' }
+    }
+  }
+});
 
-          let comebackCount = 0;
-          for (const q of quizzesWithComeback) {
-           if (q.attempts.length >= 2) {
-            const latest = q.attempts[0]!;
-            const prev = q.attempts[1]!;
+let comebackQuizzes: number[] = [];
 
-            if ((latest.score ?? 0) >= 2 * (prev.score ?? 0)) {
-              comebackCount++;
-            }
-          }
+for (const q of quizzesWithComeback) {
+  if (q.attempts.length >= 2) {
+    const latest = q.attempts[0]!;
+    const prev = q.attempts[1]!;
 
-          }
+    if ((latest.score ?? 0) >= 2 * (prev.score ?? 0)) {
+      comebackQuizzes.push(q.id); // record quiz ID
+    }
+  }
+}
 
-          if (comebackCount >= 3) {
-            badgesToUnlock.push({ id: 2, name: "Comeback Star" });
-          }
+const uniqueComebacks = new Set(comebackQuizzes);
+
+if (uniqueComebacks.size >= 3) {
+  badgesToUnlock.push({ id: 2, name: "Comeback Star" });
+}
+
 
           // Quick learner badge
   
@@ -656,14 +662,22 @@ console.log("Enrollment XP updated to:", totalXp);
             }
 
             // Leaderboard topper badge
-            const leaderboard = await prisma.enrollment.findMany({
-                where: { sectionID: attempt.quiz.sectionID },
-                orderBy: { xp: 'desc' }
-              });
 
-              if (leaderboard.length > 0 && leaderboard[0]!.studentID === attempt.studentID) {
-                badgesToUnlock.push({ id: 5, name: "Leaderboard Topper" });
-              }
+const quizAttempts = await prisma.attempt.findMany({
+  where: { quizID: attempt.quizID, isGraded: true },
+  orderBy: [
+    { score: 'desc' },
+    { end_time: 'asc' } // tie-breaker: faster completion wins
+  ],
+  include: { student: true }
+});
+
+// If the current student is ranked #1 in this quiz
+if (quizAttempts.length > 0 && quizAttempts[0]!.studentID === attempt.studentID) {
+  badgesToUnlock.push({ id: 5, name: "Leaderboard Topper" });
+}
+
+
 
 
         // Save unlocked badges

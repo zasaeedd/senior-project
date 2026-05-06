@@ -50,37 +50,67 @@ export const getCurrentUser = async (req: Request, res: Response) => {
             return res.status(401).json({message: "Unauthorized"});
         }
 
-        const user = await prisma.user.findUnique({
-            where: {userId: parseInt(userId)},
-            include:{
-                instructor: {
-                    include: {
-                        section: {
-                            include: {
-                                course: true,
-                                _count: {
-                                    select: {enrollments: true}
-                                }
-                            }
-                        }
-                    }
-                },
-                student: true
-            }
-            // select: {
-            //     userId: true,
-            //     firstName: true,
-            //     lastName: true,
-            //     email: true,
-            //     role: true,
+        // const user = await prisma.user.findUnique({
+        //     where: {userId: parseInt(userId)},
+        //     include:{
+        //         instructor: {
+        //             include: {
+        //                 section: {
+        //                     include: {
+        //                         course: true,
+        //                         _count: {
+        //                             select: {enrollments: true}
+        //                         }
+        //                     }
+        //                 }
+        //             }
+        //         },
+        //         student: true
+        //     }
+        //     // select: {
+        //     //     userId: true,
+        //     //     firstName: true,
+        //     //     lastName: true,
+        //     //     email: true,
+        //     //     role: true,
             
-        });
+        // });
+
+        const user = await prisma.user.findUnique({
+  where: { userId: parseInt(userId) },
+  include: {
+    instructor: {
+      include: {
+        section: {
+          include: {
+            course: true,
+            _count: {
+              select: { enrollments: true }
+            }
+          }
+        }
+      }
+    },
+    student: {
+      include: {
+        enrollments: {
+          include: {
+            section: {
+              include: { course: true }
+            }
+          }
+        }
+      }
+    }
+  }
+});
 
         if(!user) {
             return res.status(401).json({message: "User not found"});
 
         }
 
+        
         res.json(user);
     }catch(err: any) {
         console.error("Error fetching user: ", err);

@@ -630,8 +630,131 @@ export const submitAttempt = async (req: Request, res: Response) => {
 
 
 
-
 // ------- leaderboard for student
+
+// export const viewLeaderboard = async (req: Request, res: Response) => {
+//   try {
+//     const { quizId, courseId } = req.params;
+//     const userId = req.userId; 
+
+//     if (!userId) {
+//       return res.status(401).json({ message: "Unauthorized" });
+//     }
+
+//     // Resolve student record for this user
+//     const student = await prisma.student.findUnique({
+//       where: { userID: Number(userId) },
+//     });
+
+//     // If not a student, block
+//     if (!student) {
+//       return res.status(403).json({ message: "Only students can view leaderboard" });
+//     }
+
+//     const attempts = await prisma.attempt.findMany({
+//       where: {
+//         quizID: Number(quizId),
+//         submitted_at: { not: null },
+//         isGraded: true,
+//       },
+//       include: {
+//         quiz: {
+//           include: { questions: true }, 
+//         },
+//         student: {
+//           include: {
+//             user: true,
+//             enrollments: {
+//               include: {
+//                 section: {
+//                   include: { course: true },
+//                 },
+//               },
+//             },
+//           },
+//         },
+//       },
+//       orderBy: {
+//         submitted_at: "desc",
+//       },
+//     });
+
+//     // Filter by course
+//     const filteredAttempts = attempts.filter((a) =>
+//       a.student.enrollments.some(
+//         (enrollment) => enrollment.section.course.id === Number(courseId)
+//       )
+//     );
+
+//     // Deduplicate: keep only latest attempt per student
+//     const latestAttemptsMap = new Map<number, typeof filteredAttempts[0]>();
+//     for (const attempt of filteredAttempts) {
+//       if (!latestAttemptsMap.has(attempt.student.id)) {
+//         latestAttemptsMap.set(attempt.student.id, attempt);
+//       }
+//     }
+//     const latestAttempts = Array.from(latestAttemptsMap.values());
+
+//     const formatDuration = (ms: number) => {
+//       const totalSeconds = Math.floor(ms / 1000);
+//       const hours = Math.floor(totalSeconds / 3600);
+//       const minutes = Math.floor((totalSeconds % 3600) / 60);
+//       const seconds = totalSeconds % 60;
+//       const pad = (n: number) => n.toString().padStart(2, "0");
+//       return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+//     };
+
+//     const leaderboard = latestAttempts
+//       .map((a) => {
+//         const durationMs =
+//           a.end_time && a.start_time
+//             ? a.end_time.getTime() - a.start_time.getTime()
+//             : 0;
+
+//         const earnedPoints = a.score ?? 0; 
+//         const totalPoints = a.quiz.questions.reduce(
+//           (sum, q) => sum + (q.points ?? 0),
+//           0
+//         );
+
+//         const percentage =
+//           totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0;
+
+//         return {
+//           studentId: a.student.id,
+//           studentName: `${a.student.user.firstName} ${a.student.user.lastName}`,
+//           score: earnedPoints,
+//           totalPoints,
+//           percentage,
+//           durationMs, // raw ms for sorting
+//           duration: formatDuration(durationMs), // formatted string for display
+//         };
+//       })
+//       .sort((a, b) => {
+//         // First sort by percentage (higher is better)
+//         if (b.percentage !== a.percentage) {
+//           return b.percentage - a.percentage;
+//         }
+//         // If tied, sort by duration (lower is better)
+//         return a.durationMs - b.durationMs;
+//       })
+//       .map((entry, idx) => ({ rank: idx + 1, ...entry }));
+
+//     console.log("Resolved student:", student?.id, student?.userID);
+//     console.log("Leaderboard entries:", leaderboard.map(l => ({
+//       studentId: l.studentId,
+//       studentName: l.studentName,
+//       score: l.score,
+//       duration: l.duration
+//     })));
+
+//     res.json({ quizId, leaderboard, currentStudentId: student.id });
+//   } catch (err) {
+//     console.error("Error building leaderboard:", err);
+//     res.status(500).json({ message: "Internal Server Error" });
+//   }
+// };
+
 
 export const viewLeaderboard = async (req: Request, res: Response) => {
   try {
@@ -642,12 +765,19 @@ export const viewLeaderboard = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    // Resolve student record for this user
     const student = await prisma.student.findUnique({
       where: { userID: Number(userId) },
+      include: {
+        enrollments: {
+          include: {
+            section: {
+              include: { course: true },
+            },
+          },
+        },
+      },
     });
 
-    // If not a student, block
     if (!student) {
       return res.status(403).json({ message: "Only students can view leaderboard" });
     }
@@ -659,35 +789,27 @@ export const viewLeaderboard = async (req: Request, res: Response) => {
         isGraded: true,
       },
       include: {
-        quiz: {
-          include: { questions: true }, 
-        },
+        quiz: { include: { questions: true } },
         student: {
           include: {
             user: true,
             enrollments: {
               include: {
-                section: {
-                  include: { course: true },
-                },
+                section: { include: { course: true } },
               },
             },
           },
         },
       },
-      orderBy: {
-        submitted_at: "desc",
-      },
+      orderBy: { submitted_at: "desc" },
     });
 
-    // Filter by course
     const filteredAttempts = attempts.filter((a) =>
       a.student.enrollments.some(
         (enrollment) => enrollment.section.course.id === Number(courseId)
       )
     );
 
-    // Deduplicate: keep only latest attempt per student
     const latestAttemptsMap = new Map<number, typeof filteredAttempts[0]>();
     for (const attempt of filteredAttempts) {
       if (!latestAttemptsMap.has(attempt.student.id)) {
@@ -705,42 +827,46 @@ export const viewLeaderboard = async (req: Request, res: Response) => {
       return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
     };
 
-  const leaderboard = latestAttempts
-  .map((a) => {
-    const durationMs =
-      a.end_time && a.start_time
-        ? a.end_time.getTime() - a.start_time.getTime()
-        : 0;
+    const leaderboard = latestAttempts
+      .map((a) => {
+        const durationMs =
+          a.end_time && a.start_time
+            ? a.end_time.getTime() - a.start_time.getTime()
+            : 0;
 
-    const earnedPoints = a.score ?? 0; 
-    const totalPoints = a.quiz.questions.reduce(
-      (sum, q) => sum + (q.points ?? 0),
-      0
-    );
+        const earnedPoints = a.score ?? 0;
+        const totalPoints = a.quiz.questions.reduce(
+          (sum, q) => sum + (q.points ?? 0),
+          0
+        );
 
-    const percentage =
-      totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0;
+        const percentage =
+          totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0;
 
-    return {
-      studentId: a.student.id,
-      studentName: `${a.student.user.firstName} ${a.student.user.lastName}`,
-      score: earnedPoints,
-      totalPoints,
-      percentage,
-      duration: formatDuration(durationMs),
-    };
-  })
-  .sort((a, b) => b.percentage - a.percentage)
-  .map((entry, idx) => ({ rank: idx + 1, ...entry }));
+        // Pull XP from enrollment (adjust if stored differently)
+        const xp =
+          a.student.enrollments.length > 0
+            ? a.student.enrollments[0]?.xp ?? 0
+            : 0;
 
-
-      console.log("Resolved student:", student?.id, student?.userID);
-      console.log("Leaderboard entries:", leaderboard.map(l => ({
-        studentId: l.studentId,
-        studentName: l.studentName,
-        score: l.score,
-        duration: l.duration
-      })));
+        return {
+          studentId: a.student.id,
+          studentName: `${a.student.user.firstName} ${a.student.user.lastName}`,
+          score: earnedPoints,
+          totalPoints,
+          percentage,
+          durationMs,
+          duration: formatDuration(durationMs),
+          xp, // NEW field
+        };
+      })
+      .sort((a, b) => {
+        if (b.percentage !== a.percentage) {
+          return b.percentage - a.percentage;
+        }
+        return a.durationMs - b.durationMs;
+      })
+      .map((entry, idx) => ({ rank: idx + 1, ...entry }));
 
     res.json({ quizId, leaderboard, currentStudentId: student.id });
   } catch (err) {
@@ -748,8 +874,6 @@ export const viewLeaderboard = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
-
 
 
 

@@ -473,6 +473,7 @@ export const getStudentBadges = async (req: Request, res: Response) => {
     include: { badge: true }
   });
 
+  
   res.json(
     badges.map(sb => ({
       id: sb.badge.id,
