@@ -64,13 +64,110 @@
 
 
 
+
+// before the update to modify the page:
+
+// "use client";
+
+// import { useParams } from "next/navigation";
+// import { useEffect, useState } from "react";
+// import PendingQuizzesList from "@/components/layout/PendingQuizzesList";
+// import InstructorSidebar from "@/components/layout/InstructorSidebar";
+// import InstructorLeaderboard from "@/components/layout/InstructorLeaderboard"; 
+
+// export default function SectionDetailsPage() {
+//   const params = useParams();
+//   const sectionId = params.id as string;
+
+//   const [sectionDetails, setSectionDetails] = useState<any>(null);
+//   const [activeTab, setActiveTab] = useState<"pending" | "leaderboard">("pending");
+
+//   useEffect(() => {
+//     fetch(`http://localhost:5000/api/inst/section/${sectionId}/details`, {
+//       headers: {
+//         Authorization: `Bearer ${localStorage.getItem("token")}`,
+//       },
+//     })
+//       .then((res) => res.json())
+//       .then((data) => setSectionDetails(data))
+//       .catch((err) => console.error(err));
+//   }, [sectionId]);
+
+//   if (!sectionDetails) return <p>Loading section details...</p>;
+
+//   return (
+//     <div className="flex min-h-screen bg-gray-100">
+//       {/* Sidebar */}
+//       <aside className="w-67 bg-white border-r p-5">
+//         <InstructorSidebar />
+//       </aside>
+
+//       {/* Main Content */}
+//       <div className="flex-1 flex flex-col">
+//         {/* Header */}
+//         <header className="p-8 border-b bg-white">
+//           <h1 className="text-2xl font-bold text-center">
+//             {sectionDetails.courseName} ({sectionDetails.courseCode}) – Section{" "}
+//             {sectionDetails.sectionNumber}
+//           </h1>
+//         </header>
+
+//         {/* Tabs */}
+//         <main className="flex-1 p-6">
+//          <div className="flex gap-6 mb-6 justify-center border-b border-gray-300">
+//             <button
+//               onClick={() => setActiveTab("leaderboard")}
+//               className={`pb-2 px-4 text-lg font-semibold transition-colors ${
+//                 activeTab === "leaderboard"
+//                   ? "border-b-4 border-blue-600 text-blue-600"
+//                   : "text-gray-500 hover:text-blue-600"
+//               }`}
+//             >
+//               Leaderboard
+//             </button>
+//             <button
+//               onClick={() => setActiveTab("pending")}
+//               className={`pb-2 px-4 text-lg font-semibold transition-colors ${
+//                 activeTab === "pending"
+//                   ? "border-b-4 border-blue-600 text-blue-600"
+//                   : "text-gray-500 hover:text-blue-600"
+//               }`}
+//             >
+//               Pending Quizzes
+//             </button>
+//           </div>
+
+
+//           {/* Conditional Rendering */}
+//           {activeTab === "pending" ? (
+//             <PendingQuizzesList
+//               sectionId={sectionDetails.sectionId}
+//               courseId={sectionDetails.courseId}
+//             />
+//           ) : (
+//             <InstructorLeaderboard
+//               sectionId={sectionDetails.sectionId}
+//               courseId={sectionDetails.courseId}
+//             />
+//           )}
+//         </main>
+//       </div>
+//     </div>
+//   );
+// }
+
+
+
+
+
+
 "use client";
 
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import PendingQuizzesList from "@/components/layout/PendingQuizzesList";
 import InstructorSidebar from "@/components/layout/InstructorSidebar";
-import InstructorLeaderboard from "@/components/layout/InstructorLeaderboard"; 
+import InstructorLeaderboard from "@/components/layout/InstructorLeaderboard";
 
 export default function SectionDetailsPage() {
   const params = useParams();
@@ -90,52 +187,59 @@ export default function SectionDetailsPage() {
       .catch((err) => console.error(err));
   }, [sectionId]);
 
-  if (!sectionDetails) return <p>Loading section details...</p>;
+  if (!sectionDetails)
+    return <p className="p-6 text-slate-500">Loading section details...</p>;
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="min-h-screen flex bg-slate-50 text-slate-800">
+
       {/* Sidebar */}
-      <aside className="w-67 bg-white border-r p-5">
-        <InstructorSidebar />
+      <aside className="w-64 bg-white border-r">
+        <div className="sticky top-6 p-4">
+          <InstructorSidebar />
+        </div>
       </aside>
 
-      {/* Main Content */}
+      {/* Main */}
       <div className="flex-1 flex flex-col">
+
         {/* Header */}
-        <header className="p-8 border-b bg-white">
-          <h1 className="text-2xl font-bold text-center">
+        <header className="bg-white border-b p-6">
+          <h1 className="text-xl font-semibold text-center text-slate-700">
             {sectionDetails.courseName} ({sectionDetails.courseCode}) – Section{" "}
             {sectionDetails.sectionNumber}
           </h1>
         </header>
 
         {/* Tabs */}
-        <main className="flex-1 p-6">
-         <div className="flex gap-6 mb-6 justify-center border-b border-gray-300">
+        <main className="flex-1 p-6 max-w-[1400px] mx-auto w-full">
+
+          <div className="flex justify-center gap-6 border-b border-slate-200 mb-6">
+
             <button
               onClick={() => setActiveTab("leaderboard")}
-              className={`pb-2 px-4 text-lg font-semibold transition-colors ${
+              className={`pb-3 px-4 font-medium transition ${
                 activeTab === "leaderboard"
-                  ? "border-b-4 border-blue-600 text-blue-600"
-                  : "text-gray-500 hover:text-blue-600"
+                  ? "border-b-2 border-blue-600 text-blue-600"
+                  : "text-slate-500 hover:text-blue-600"
               }`}
             >
               Leaderboard
             </button>
+
             <button
               onClick={() => setActiveTab("pending")}
-              className={`pb-2 px-4 text-lg font-semibold transition-colors ${
+              className={`pb-3 px-4 font-medium transition ${
                 activeTab === "pending"
-                  ? "border-b-4 border-blue-600 text-blue-600"
-                  : "text-gray-500 hover:text-blue-600"
+                  ? "border-b-2 border-blue-600 text-blue-600"
+                  : "text-slate-500 hover:text-blue-600"
               }`}
             >
               Pending Quizzes
             </button>
+
           </div>
 
-
-          {/* Conditional Rendering */}
           {activeTab === "pending" ? (
             <PendingQuizzesList
               sectionId={sectionDetails.sectionId}
@@ -147,9 +251,9 @@ export default function SectionDetailsPage() {
               courseId={sectionDetails.courseId}
             />
           )}
+
         </main>
       </div>
     </div>
   );
 }
-

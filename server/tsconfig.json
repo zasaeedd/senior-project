@@ -51,6 +51,10 @@
     "target": "ES2020",
     "module": "commonjs",
 
+    "esModuleInterop": true,
+    "types": ["node"],
+
+
     // Output
     "rootDir": ".",
     "outDir": "dist",

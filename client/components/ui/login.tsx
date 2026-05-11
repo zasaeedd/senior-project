@@ -4,6 +4,8 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "./button";
 import { Input } from "@/components/ui/input";
+import { supabase } from "@/supabaseClient";
+
 import {
   Card,
   CardContent,
@@ -40,6 +42,17 @@ export function LoginForm() {
       if (!response.ok) {
         throw new Error(data.message || "Login failed");
       }
+       localStorage.setItem("token", data.token);
+
+    // Tell Supabase about the session
+    await supabase.auth.setSession({
+      access_token: data.supabaseAccessToken,
+      refresh_token: data.supabaseRefreshToken,
+    });
+
+    // Optional: check current user
+    const { data: user } = await supabase.auth.getUser();
+    console.log("Supabase user:", user);
 
       // store token in localstorage
       localStorage.setItem("token", data.token);

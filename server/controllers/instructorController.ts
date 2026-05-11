@@ -204,48 +204,59 @@ export const getInstructorAnalytics = async (req: Request, res: Response) => {
       return res.status(403).json({ message: "Only instructors can access analytics" });
     }
 
-    // Fetch quizzes + attempts for this section
-    const quizzes = await prisma.quiz.findMany({
-      where: { courseID: Number(courseId), sectionID: Number(sectionId) },
-      include: {
-        attempts: true,
-      },
-    });
+   // Fetch quizzes + attempts for this section
+const quizzes = await prisma.quiz.findMany({
+  where: { courseID: Number(courseId), sectionID: Number(sectionId) },
+  include: {
+    attempts: true, // make sure attempts has both score and totalPoints
+  },
+});
 
-    if (!quizzes || quizzes.length === 0) {
-      return res.json({ averageScore: 0, mostStruggledQuiz: null });
-    }
+if (!quizzes || quizzes.length === 0) {
+  return res.json({ averageScore: 0, mostStruggledQuiz: null });
+}
 
-    //  Compute overall average score (average percentages directly)
-    const allScores = quizzes.flatMap(q =>
-      q.attempts.map(a => a.score ?? 0)
-    );
+// Compute overall average percentage
+const allPercentages = quizzes.flatMap(q =>
+  q.attempts.map(a => {
+    const score = a.score ?? 0;
+    const total = a.totalPoints ?? 0;
+    return total > 0 ? (score / total) * 100 : 0;
+  })
+);
 
-    const averageScore =
-      allScores.length > 0
-        ? allScores.reduce((sum, s) => sum + s, 0) / allScores.length
-        : 0;
+const averageScore =
+  allPercentages.length > 0
+    ? allPercentages.reduce((sum, p) => sum + p, 0) / allPercentages.length
+    : 0;
 
-    console.log("All Scores:", allScores);
-    console.log("Calculated Average Score:", averageScore);
+console.log("All Percentages:", allPercentages);
+console.log("Calculated Average Score (%):", averageScore);
 
     //  Compute most struggled quiz (lowest average percentage)
     let mostStruggledQuiz: any = null;
-    quizzes.forEach((quiz) => {
-      if (quiz.attempts.length > 0) {
-        const avg =
-          quiz.attempts.reduce((sum, a) => sum + (a.score ?? 0), 0) /
-          quiz.attempts.length;
 
-        console.log(
-          `Quiz ${quiz.id} (${quiz.title}): avg=${avg}`
-        );
+quizzes.forEach((quiz) => {
+  if (quiz.attempts.length > 0) {
+    const avgPercentage =
+      quiz.attempts.reduce((sum, a) => {
+        const score = a.score ?? 0;
+        const total = a.totalPoints ?? 0;
+        return sum + (total > 0 ? (score / total) * 100 : 0);
+      }, 0) / quiz.attempts.length;
 
-        if (!mostStruggledQuiz || avg < mostStruggledQuiz.averageScore) {
-          mostStruggledQuiz = { id: quiz.id, title: quiz.title, averageScore: avg };
-        }
-      }
-    });
+    console.log(`Quiz ${quiz.id} (${quiz.title}): avg%=${avgPercentage}`);
+
+    if (!mostStruggledQuiz || avgPercentage < mostStruggledQuiz.averageScore) {
+      mostStruggledQuiz = {
+        id: quiz.id,
+        title: quiz.title,
+        averageScore: avgPercentage,
+      };
+    }
+  }
+});
+
 
           // After computing averageScore and mostStruggledQuiz
       const quizAverages = quizzes.map((quiz) => {
@@ -922,3 +933,4 @@ export const viewLeaderboardInst = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+

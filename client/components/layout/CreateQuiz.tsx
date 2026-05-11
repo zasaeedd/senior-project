@@ -237,12 +237,42 @@
 
 // export default CreateQuiz;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 "use client";
 
 import React, { useState, useEffect } from "react";
 import QuestionForm from "@/components/ui/QuestionForm";
 import { useRouter } from "next/navigation";
 import FileUploader from "./FileUploader";
+import { supabase } from "@/supabaseClient";
 
 interface Choice {
   text: string;
@@ -261,6 +291,22 @@ interface CreateQuizProps {
   onClose: () => void;
 }
 
+// const CreateQuiz: React.FC<CreateQuizProps> = ({ onClose }) => {
+//   function FileUploader() {
+//     useEffect(() => {
+//       const checkUser = async () => {
+//         const {
+//           data: { user },
+//         } = await supabase.auth.getUser();
+//         console.log("Current user:", user);
+//       };
+
+//       checkUser();
+//     }, []);
+
+//     return <div>Uploader goes here</div>;
+//   }
+
 const CreateQuiz: React.FC<CreateQuizProps> = ({ onClose }) => {
   const router = useRouter();
   // Quiz-level state
@@ -269,11 +315,14 @@ const CreateQuiz: React.FC<CreateQuizProps> = ({ onClose }) => {
   const [deadline, setDeadline] = useState("");
   const [courseCode, setCourseCode] = useState("");
   // const [sectionNumber, setSectionNumber] = useState("");
-  const [selectedSections, setSelectedSections] = useState<string[]>([]);
+  const [selectedSections, setSelectedSections] = useState<number[]>([]);
   const [maxAttempts, setmaxAttempt] = useState(1);
 
   // Dropdown data
   const [coursesSections, setCoursesSections] = useState<any[]>([]);
+  const filteredSections = courseCode
+    ? coursesSections.filter((course) => course.courseCode === courseCode)
+    : [];
 
   // Questions state
   const [questions, setQuestions] = useState<Question[]>([
@@ -301,15 +350,18 @@ const CreateQuiz: React.FC<CreateQuizProps> = ({ onClose }) => {
       );
       const data = await res.json();
       setCoursesSections(data);
+      // localStorage.setItem("token", data.token);
+
+      // Set Supabase session with tokens
+      await supabase.auth.setSession({
+        access_token: data.supabaseAccessToken,
+        refresh_token: data.supabaseRefreshToken,
+      });
     };
     fetchData();
   }, []);
 
-  // Filter sections by selected course
-  const filteredSections = coursesSections.filter(
-    (sec) => sec.courseCode === courseCode,
-  );
-
+  
   // Handlers for questions
   const handleTextChange = (qIndex: number, value: string) => {
     const updated = [...questions];
@@ -405,7 +457,10 @@ const CreateQuiz: React.FC<CreateQuizProps> = ({ onClose }) => {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(payload),
+      
     });
+    console.log("Auth header:", `Bearer ${token}`);
+
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -419,143 +474,377 @@ const CreateQuiz: React.FC<CreateQuizProps> = ({ onClose }) => {
 
   const [activeTab, setActiveTab] = useState<"manual" | "ai">("manual");
 
-  return (
-    <div className="p-4">
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Tab buttons */}
-        <div className="flex space-x-4 mb-4">
+//   return (
+//     <div className="p-4">
+//       <form onSubmit={handleSubmit} className="space-y-6">
+//         {/* Tab buttons */}
+//         <div className="flex space-x-4 mb-4">
+//           <button
+//             type="button"
+//             className={`px-4 py-2 rounded ${
+//               activeTab === "manual" ? "bg-blue-500 text-white" : "bg-gray-200"
+//             }`}
+//             onClick={() => setActiveTab("manual")}
+//           >
+//             Manual Quiz
+//           </button>
+//           <button
+//             type="button"
+//             className={`px-4 py-2 rounded ${
+//               activeTab === "ai" ? "bg-blue-500 text-white" : "bg-gray-200"
+//             }`}
+//             onClick={() => setActiveTab("ai")}
+//           >
+//             AI Quiz
+//           </button>
+//         </div>
+
+//         {/* Shared Quiz Info — always visible */}
+//         <div className="border p-4 rounded shadow space-y-4">
+//           <h2 className="text-lg font-bold">Quiz Details</h2>
+
+//           <input
+//             type="text"
+//             value={title}
+//             onChange={(e) => setTitle(e.target.value)}
+//             placeholder="Quiz Title"
+//             className="border p-2 w-full rounded"
+//           />
+
+//           <label className="block font-semibold mb-2">Duration (minutes)</label>
+//           <input
+//             type="number"
+//             value={duration}
+//             min={1}
+//             onChange={(e) => setDuration(Number(e.target.value))}
+//             placeholder="Duration (minutes)"
+//             className="border p-2 w-full rounded"
+//           />
+
+//           <label className="block font-semibold mb-2">Max Attempts:</label>
+//           <input
+//             type="number"
+//             name="maxAttempts"
+//             min="1"
+//             value={maxAttempts}
+//             onChange={(e) => setmaxAttempt(Number(e.target.value))}
+//             className="border p-2 w-full rounded"
+//           />
+
+//           <label className="block font-semibold mb-2">Deadline:</label>
+//           <input
+//             type="datetime-local"
+//             value={deadline}
+//             min={new Date().toISOString().slice(0, 16)}
+//             onChange={(e) => setDeadline(e.target.value)}
+//             className="border p-2 w-full rounded"
+//           />
+
+//           <label className="block font-semibold mb-2">Course</label>
+//           <select
+//             value={courseCode}
+//             onChange={(e) => setCourseCode(e.target.value)}
+//             className="border p-2 w-full rounded"
+//           >
+//             <option value="">Select Course</option>
+//             {coursesSections
+//               .filter(
+//                 (course, index, self) =>
+//                   index ===
+//                   self.findIndex((c) => c.courseId === course.courseId),
+//               )
+//               .map((course) => (
+//                 <option key={course.courseId} value={course.courseCode}>
+//                   {course.courseCode} - {course.courseName}
+//                 </option>
+//               ))}
+//           </select>
+
+//           <label className="block font-semibold mb-2">Sections</label>
+//           <div className="space-y-2">
+//             {filteredSections.map((sec) => (
+//               <label
+//                 key={sec.sectionId}
+//                 className="flex items-center space-x-2"
+//               >
+//                 <input
+//   type="checkbox"
+//   value={sec.sectionNumber}
+//   checked={selectedSections.includes(sec.sectionNumber)}
+//   onChange={(e) => {
+//     const value = Number(e.target.value);
+//     if (e.target.checked) {
+//       setSelectedSections([...selectedSections, value]);
+//     } else {
+//       setSelectedSections(selectedSections.filter((s) => s !== value));
+//     }
+//   }}
+// />
+//                 <span>Section {sec.sectionNumber}</span>
+//               </label>
+//             ))}
+//           </div>
+//         </div>
+
+//         {/* Tab-specific content */}
+//         {activeTab === "manual" && (
+//           <>
+//             {/* Questions */}
+//             <div className="space-y-4">
+//               {questions.map((q, qIndex) => (
+//                 <QuestionForm
+//                   key={qIndex}
+//                   index={qIndex}
+//                   question={q}
+//                   onTextChange={handleTextChange}
+//                   onTypeChange={handleTypeChange}
+//                   onPointsChange={handlePointsChange}
+//                   onDifficultyChange={handleDifficultyChange}
+//                   onChoiceTextChange={handleChoiceTextChange}
+//                   onCorrectChoiceChange={handleCorrectChoiceChange}
+//                   onAddChoice={handleAddChoice}
+//                   onRemove={handleRemoveQuestion}
+//                 />
+//               ))}
+//             </div>
+
+//             {/* Add Question Button */}
+//             <button
+//               type="button"
+//               onClick={() =>
+//                 setQuestions([
+//                   ...questions,
+//                   {
+//                     text: "",
+//                     type: "mcq",
+//                     points: 0,
+//                     difficulty: "easy",
+//                     choices: [
+//                       { text: "", is_correct: false },
+//                       { text: "", is_correct: false },
+//                     ],
+//                   },
+//                 ])
+//               }
+//               className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+//             >
+//               + Add Question
+//             </button>
+//           </>
+//         )}
+
+//         {activeTab === "ai" && (
+//           <>
+//             <h2 className="text-lg font-bold">AI Quiz Generator</h2>
+//             <FileUploader />
+//           </>
+//         )}
+
+//         {/* Shared submit button */}
+//         <button
+//           type="submit"
+//           className="bg-green-500 text-white px-4 py-2 rounded"
+//         >
+//           Create Quiz
+//         </button>
+//       </form>
+//     </div>
+//   );
+// };
+
+
+return (
+  <div className="p-6 bg-slate-50 min-h-full">
+
+    <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl mx-auto">
+
+      {/* HEADER */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+
+        <h1 className="text-xl font-bold text-slate-800 mb-4">
+          Create Quiz
+        </h1>
+
+        {/* Tabs (modern toggle style) */}
+        <div className="flex bg-slate-100 p-1 rounded-xl w-fit">
+
           <button
             type="button"
-            className={`px-4 py-2 rounded ${
-              activeTab === "manual" ? "bg-blue-500 text-white" : "bg-gray-200"
-            }`}
             onClick={() => setActiveTab("manual")}
+            className={`px-5 py-2 rounded-lg text-sm font-medium transition ${
+              activeTab === "manual"
+                ? "bg-white shadow text-blue-600"
+                : "text-slate-500 hover:text-slate-700"
+            }`}
           >
-            Manual Quiz
+            Manual
           </button>
+
           <button
             type="button"
-            className={`px-4 py-2 rounded ${
-              activeTab === "ai" ? "bg-blue-500 text-white" : "bg-gray-200"
-            }`}
             onClick={() => setActiveTab("ai")}
+            className={`px-5 py-2 rounded-lg text-sm font-medium transition ${
+              activeTab === "ai"
+                ? "bg-white shadow text-blue-600"
+                : "text-slate-500 hover:text-slate-700"
+            }`}
           >
-            AI Quiz
+            AI Generator
           </button>
+
         </div>
 
-        {/* Shared Quiz Info — always visible */}
-        <div className="border p-4 rounded shadow space-y-4">
-          <h2 className="text-lg font-bold">Quiz Details</h2>
+      </div>
 
+      {/* QUIZ INFO CARD */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-5">
+
+  <h2 className="font-semibold text-slate-700">
+    Quiz Details
+  </h2>
+
+  {/* Title */}
+  <div>
+    <label className="block text-sm font-medium text-slate-600 mb-1">
+      Quiz Title
+    </label>
+    <input
+      type="text"
+      value={title}
+      onChange={(e) => setTitle(e.target.value)}
+      placeholder="Quiz Title"
+      className="border border-slate-200 p-2 w-full rounded-lg focus:ring-2 focus:ring-blue-100"
+    />
+  </div>
+
+  {/* Duration + Attempts */}
+  <div className="grid grid-cols-2 gap-4">
+
+    <div>
+      <label className="block text-sm font-medium text-slate-600 mb-1">
+        Duration (minutes)
+      </label>
+      <input
+        type="number"
+        value={duration}
+        min={1}
+        onChange={(e) => setDuration(Number(e.target.value))}
+        className="border border-slate-200 p-2 w-full rounded-lg"
+      />
+    </div>
+
+    <div>
+      <label className="block text-sm font-medium text-slate-600 mb-1">
+        Max Attempts
+      </label>
+      <input
+        type="number"
+        min="1"
+        value={maxAttempts}
+        onChange={(e) => setmaxAttempt(Number(e.target.value))}
+        className="border border-slate-200 p-2 w-full rounded-lg"
+      />
+    </div>
+
+  </div>
+
+  {/* Deadline */}
+  <div>
+    <label className="block text-sm font-medium text-slate-600 mb-1">
+      Deadline
+    </label>
+    <input
+      type="datetime-local"
+      value={deadline}
+      min={new Date().toISOString().slice(0, 16)}
+      onChange={(e) => setDeadline(e.target.value)}
+      className="border border-slate-200 p-2 w-full rounded-lg"
+    />
+  </div>
+
+  {/* Course */}
+  <div>
+    <label className="block text-sm font-medium text-slate-600 mb-1">
+      Course
+    </label>
+    <select
+      value={courseCode}
+      onChange={(e) => setCourseCode(e.target.value)}
+      className="border border-slate-200 p-2 w-full rounded-lg"
+    >
+      <option value="">Select Course</option>
+      {coursesSections
+        .filter(
+          (course, index, self) =>
+            index ===
+            self.findIndex((c) => c.courseId === course.courseId)
+        )
+        .map((course) => (
+          <option key={course.courseId} value={course.courseCode}>
+            {course.courseCode} - {course.courseName}
+          </option>
+        ))}
+    </select>
+  </div>
+
+  {/* Sections */}
+  <div>
+    <label className="block text-sm font-medium text-slate-600 mb-2">
+      Sections
+    </label>
+
+    <div className="flex flex-wrap gap-2">
+      {filteredSections.map((sec) => (
+        <label
+          key={sec.sectionId}
+          className="flex items-center gap-2 px-3 py-1 border rounded-full text-sm hover:bg-slate-50"
+        >
           <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Quiz Title"
-            className="border p-2 w-full rounded"
+            type="checkbox"
+            value={sec.sectionNumber}
+            checked={selectedSections.includes(sec.sectionNumber)}
+            onChange={(e) => {
+              const value = Number(e.target.value);
+              if (e.target.checked) {
+                setSelectedSections([...selectedSections, value]);
+              } else {
+                setSelectedSections(
+                  selectedSections.filter((s) => s !== value)
+                );
+              }
+            }}
           />
+          Section {sec.sectionNumber}
+        </label>
+      ))}
+    </div>
 
-          <label className="block font-semibold mb-2">Duration (minutes)</label>
-          <input
-            type="number"
-            value={duration}
-            min={1}
-            onChange={(e) => setDuration(Number(e.target.value))}
-            placeholder="Duration (minutes)"
-            className="border p-2 w-full rounded"
-          />
+  </div>
 
-          <label className="block font-semibold mb-2">Max Attempts:</label>
-          <input
-            type="number"
-            name="maxAttempts"
-            min="1"
-            value={maxAttempts}
-            onChange={(e) => setmaxAttempt(Number(e.target.value))}
-            className="border p-2 w-full rounded"
-          />
+</div>
 
-          <label className="block font-semibold mb-2">Deadline:</label>
-          <input
-            type="datetime-local"
-            value={deadline}
-            min={new Date().toISOString().slice(0, 16)}
-            onChange={(e) => setDeadline(e.target.value)}
-            className="border p-2 w-full rounded"
-          />
+      {/* TAB CONTENT */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
 
-          <label className="block font-semibold mb-2">Course</label>
-          <select
-            value={courseCode}
-            onChange={(e) => setCourseCode(e.target.value)}
-            className="border p-2 w-full rounded"
-          >
-            <option value="">Select Course</option>
-            {coursesSections
-              .filter(
-                (course, index, self) =>
-                  index ===
-                  self.findIndex((c) => c.courseId === course.courseId),
-              )
-              .map((course) => (
-                <option key={course.courseId} value={course.courseCode}>
-                  {course.courseCode} - {course.courseName}
-                </option>
-              ))}
-          </select>
-
-          <label className="block font-semibold mb-2">Sections</label>
-          <div className="space-y-2">
-            {filteredSections.map((sec) => (
-              <label
-                key={sec.sectionId}
-                className="flex items-center space-x-2"
-              >
-                <input
-                  type="checkbox"
-                  value={sec.sectionNumber}
-                  checked={selectedSections.includes(String(sec.sectionNumber))}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (e.target.checked) {
-                      setSelectedSections([...selectedSections, value]);
-                    } else {
-                      setSelectedSections(
-                        selectedSections.filter((s) => s !== value),
-                      );
-                    }
-                  }}
-                />
-                <span>Section {sec.sectionNumber}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        {/* Tab-specific content */}
         {activeTab === "manual" && (
-          <>
-            {/* Questions */}
-            <div className="space-y-4">
-              {questions.map((q, qIndex) => (
-                <QuestionForm
-                  key={qIndex}
-                  index={qIndex}
-                  question={q}
-                  onTextChange={handleTextChange}
-                  onTypeChange={handleTypeChange}
-                  onPointsChange={handlePointsChange}
-                  onDifficultyChange={handleDifficultyChange}
-                  onChoiceTextChange={handleChoiceTextChange}
-                  onCorrectChoiceChange={handleCorrectChoiceChange}
-                  onAddChoice={handleAddChoice}
-                  onRemove={handleRemoveQuestion}
-                />
-              ))}
-            </div>
+          <div className="space-y-4">
 
-            {/* Add Question Button */}
+            {questions.map((q, qIndex) => (
+              <QuestionForm
+                key={qIndex}
+                index={qIndex}
+                question={q}
+                onTextChange={handleTextChange}
+                onTypeChange={handleTypeChange}
+                onPointsChange={handlePointsChange}
+                onDifficultyChange={handleDifficultyChange}
+                onChoiceTextChange={handleChoiceTextChange}
+                onCorrectChoiceChange={handleCorrectChoiceChange}
+                onAddChoice={handleAddChoice}
+                onRemove={handleRemoveQuestion}
+              />
+            ))}
+
             <button
               type="button"
               onClick={() =>
@@ -573,31 +862,41 @@ const CreateQuiz: React.FC<CreateQuizProps> = ({ onClose }) => {
                   },
                 ])
               }
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               + Add Question
             </button>
-          </>
+
+          </div>
         )}
 
         {activeTab === "ai" && (
-          <>
-            <h2 className="text-lg font-bold">AI Quiz Generator</h2>
-            <FileUploader />
-            
-          </>
+          <div className="space-y-4">
+
+            <h2 className="text-lg font-semibold text-slate-700">
+              AI Quiz Generator
+            </h2>
+
+            <div className="border border-dashed border-slate-300 rounded-xl p-6 bg-slate-50">
+              <FileUploader />
+            </div>
+
+          </div>
         )}
 
-        {/* Shared submit button */}
-        <button
-          type="submit"
-          className="bg-green-500 text-white px-4 py-2 rounded"
-        >
-          Create Quiz
-        </button>
-      </form>
-    </div>
-  );
-};
+      </div>
 
+      {/* SUBMIT */}
+      <button
+        type="submit"
+        className="w-full bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition font-medium"
+      >
+        Create Quiz
+      </button>
+
+    </form>
+
+  </div>
+);
+}
 export default CreateQuiz;

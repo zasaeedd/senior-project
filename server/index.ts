@@ -5,6 +5,7 @@ import authRoutes from "./routes/auth";
 import quizRoutes from "./routes/quiz"
 import studentRoutes from "./routes/info";
 import  InstructorRoutes  from "./routes/inst";
+import fileRoutes from "./routes/file";
 
 const app = express();
 
@@ -17,6 +18,15 @@ app.use(cors({
 // Middleware allows backend to read JSON body
 app.use(express.json());
 
+
+
+app.use(cors({
+  origin: "http://localhost:3000",   // frontend origin
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
+
+
 //connect auth routes 
 app.use("/api/auth", authRoutes);
 
@@ -26,9 +36,16 @@ app.use("/api/info", studentRoutes);
 
 app.use("/api/inst", InstructorRoutes);
 
+app.use("/api/file", fileRoutes);
 // starting server 
 const PORT = 5000;
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+});
+
+
+app.use((req, res, next) => {
+  console.log("Incoming request:", req.method, req.url);
+  next();
 });

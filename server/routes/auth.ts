@@ -1,6 +1,6 @@
 import express from "express";
 import { login, getCurrentUser } from "../controllers/authController";
-import { authenticate } from "../middleware/authMiddleware";
+import { jwtAuthenticate } from "../middleware/authMiddleware";
 
 const router = express.Router()
 
@@ -8,6 +8,6 @@ const router = express.Router()
 router.post("/login",login);
 
 // authenticate user by token then get its user info from the db
-router.get("/me", authenticate, getCurrentUser);
+router.get("/me", jwtAuthenticate, getCurrentUser);
 
 export default router

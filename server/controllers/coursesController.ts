@@ -282,7 +282,7 @@ export const getCourseQuizzes = async (req: Request, res: Response) => {
   }
 
   try {
-    const studentUser = await prisma.user.findUnique({
+    const studentUser = await prisma.appUser.findUnique({
       where: { userId: Number(userId) },
       include: { student: true },
     });
@@ -342,7 +342,7 @@ export const getCourseProgress = async (req: Request, res: Response) => {
   const { courseId } = req.params;
   const userId = req.userId;
 
-  const studentUser = await prisma.user.findUnique({
+  const studentUser = await prisma.appUser.findUnique({
     where: { userId: Number(userId) },
     include: { student: true }
   });
@@ -402,7 +402,7 @@ export const getStudentPerformance = async (req: Request, res: Response) => {
   const userId = req.userId;
   const { courseId, from, to } = req.query;
 
-  const studentUser = await prisma.user.findUnique({
+  const studentUser = await prisma.appUser.findUnique({
     where: { userId: Number(userId) },
     include: { student: true },
   });
@@ -456,7 +456,7 @@ export const getStudentPerformance = async (req: Request, res: Response) => {
 export const getStudentBadges = async (req: Request, res: Response) => {
     const userId = req.userId;
 
-  const studentUser = await prisma.user.findUnique({
+  const studentUser = await prisma.appUser.findUnique({
     where: { userId: Number(userId) },
     include: { student: true },
   });

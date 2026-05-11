@@ -234,7 +234,7 @@ export default function Quizzes({ courseId }: QuizzesProps) {
                           {quiz.duration} min
                         </div>
 
-                        {/* Leaderboard (UNCHANGED LOGIC) */}
+                        {/* Leaderboard  */}
                         <div>
                           <button
                             disabled={deadlinePassed}
@@ -268,7 +268,7 @@ export default function Quizzes({ courseId }: QuizzesProps) {
                           {quiz.attempts.length} / {quiz.maxAttempts}
                         </div>
 
-                        {/* Result (YOUR LOGIC KEPT) */}
+                        {/* Result */}
                         <div className="text-sm">
                           {quiz.attempts.length > 0 ? (
                             (() => {

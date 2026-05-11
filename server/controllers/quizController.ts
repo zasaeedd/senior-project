@@ -55,7 +55,7 @@ export const createQuiz = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Invalid deadline format" });
     }
 
-    const creator = await prisma.user.findUnique({
+    const creator = await prisma.appUser.findUnique({
       where: { userId: parseInt(userId) },
       include: { instructor: true },
     });
@@ -267,7 +267,7 @@ export const getQuiz = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Valid quizID is required" });
     }
 
-    const studentUser = await prisma.user.findUnique({
+    const studentUser = await prisma.appUser.findUnique({
       where: { userId: parseInt(userId) },
       include: { student: true },
     });
@@ -362,7 +362,7 @@ export const startAttempt = async (req: Request, res: Response) => {
     const userId = req.userId;
     const { quizID, } = req.body;
 
-        const studentUser = await prisma.user.findUnique({
+        const studentUser = await prisma.appUser.findUnique({
       where: { userId: Number(userId) },
       include: {student: true}
     }
@@ -596,7 +596,7 @@ export const submitAttempt = async (req: Request, res: Response) => {
       (updatedAttempt.end_time!.getTime() - updatedAttempt.start_time.getTime()) / 1000;
 
       // get the studentID
-      const studentUser = await prisma.user.findUnique({
+      const studentUser = await prisma.appUser.findUnique({
           where: { userId: Number(userId) },
           include: { student: true },
         });

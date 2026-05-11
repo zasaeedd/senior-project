@@ -211,7 +211,7 @@ const ProfileCard: React.FC = () => {
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 text-center">
         <div className="bg-blue-50 rounded-lg py-3 flex items-center justify-center gap-2">
-          <Image src="/assets/coin.png" alt="Coin" width={39} height={30} />
+          <Image src="/assets/coins.png" alt="Coin" width={39} height={30} />
           <p className="text-xs text-slate-500">XP</p>
           <p className="font-semibold text-blue-600 text-lg">
             {user.student?.enrollments?.[0]?.xp ?? 0}     

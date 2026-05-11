@@ -130,53 +130,140 @@ const ViewCourseInst: React.FC<ViewCourseInstProps> = ({onSelectedCourse}) => {
   if (loading) return <p>Loading courses...</p>;
   if (error) return <p>{error}</p>;
 
-  return (
-    <div className="p-6">
-      <h2 className="text-2xl mb-4">My Courses ✍️</h2>
-     {courses.length ? (
-  <ul className="space-y-4 border-b pb-4">
-    {courses.map((course) => (
-<li key={course.courseId} className="border p-4 rounded-lg relative group">
-  <button
-    className="w-full p-2 text-left rounded hover:bg-gray-100"
-    onClick={() =>
-      onSelectedCourse(
-        course.courseId,
-        course.sections[0]?.sectionId ?? null,
-        course.courseCode,
-        course.courseName,
-        course.sections
-      )
-    }
-  >
-    {course.courseCode}
-  </button>
+//   return (
+//     <div className="p-6">
+//       <h2 className="text-2xl mb-4">My Courses ✍️</h2>
+//      {courses.length ? (
+//   <ul className="space-y-4 border-b pb-4">
+//     {courses.map((course) => (
+// <li key={course.courseId} className="border p-4 rounded-lg relative group">
+//   <button
+//     className="w-full p-2 text-left rounded hover:bg-gray-100"
+//     onClick={() =>
+//       onSelectedCourse(
+//         course.courseId,
+//         course.sections[0]?.sectionId ?? null,
+//         course.courseCode,
+//         course.courseName,
+//         course.sections
+//       )
+//     }
+//   >
+//     {course.courseCode}
+//   </button>
 
-  {/* Hover info tied to li.group hover */}
+//   {/* Hover info tied to li.group hover */}
 
   
-  {/* <div className="absolute left-full top-0 ml-2 w-64 bg-white border rounded shadow-lg p-3 opacity-0 transition-opacity group-hover:opacity-100">
-    <h3 className="text-lg font-bold">{course.courseName}</h3>
-    <p>Sections: {course.sections.length}</p>
-    <p>
-      Total students:{" "}
-      {course.sections.reduce((sum, s) => sum + s.totalStudents, 0)}
-    </p>
-  </div> */}
-</li>
+//   {/* <div className="absolute left-full top-0 ml-2 w-64 bg-white border rounded shadow-lg p-3 opacity-0 transition-opacity group-hover:opacity-100">
+//     <h3 className="text-lg font-bold">{course.courseName}</h3>
+//     <p>Sections: {course.sections.length}</p>
+//     <p>
+//       Total students:{" "}
+//       {course.sections.reduce((sum, s) => sum + s.totalStudents, 0)}
+//     </p>
+//   </div> */}
+// </li>
 
 
 
 
 
-    ))}
-  </ul>
-) : (
-  <p>No courses found.</p>
-)}
+//     ))}
+//   </ul>
+// ) : (
+//   <p>No courses found.</p>
+// )}
+
+//     </div>
+//   );
+// };
+return (
+  <div className="p-5">
+
+    <div className="mb-5">
+
+      <h2 className="text-xl font-bold text-slate-800">
+        My Courses
+      </h2>
+
+      <p className="text-sm text-slate-500 mt-1">
+        Select a course
+      </p>
 
     </div>
-  );
-};
 
+    {courses.length ? (
+
+      <ul className="space-y-3">
+
+        {courses.map((course) => (
+
+          <li key={course.courseId}>
+
+            <button
+              className="
+                w-full
+                text-left
+                p-4
+                rounded-2xl
+                bg-white
+                border
+                border-slate-200
+                hover:border-blue-200
+                hover:bg-blue-50
+                transition-all
+              "
+              onClick={() =>
+                onSelectedCourse(
+                  course.courseId,
+                  course.sections[0]?.sectionId ?? null,
+                  course.courseCode,
+                  course.courseName,
+                  course.sections
+                )
+              }
+            >
+
+              <div className="flex items-center justify-between">
+
+                <div>
+
+                  <h3 className="font-semibold text-slate-800">
+                    {course.courseCode}
+                  </h3>
+
+                  <p className="text-sm text-slate-500 mt-1">
+                    {course.courseName}
+                  </p>
+
+                </div>
+
+                <div className="bg-blue-100 text-blue-600 text-xs font-medium px-3 py-1 rounded-full">
+                  {course.sections.length}
+                </div>
+
+              </div>
+
+            </button>
+
+          </li>
+
+        ))}
+
+      </ul>
+
+    ) : (
+
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 text-center text-slate-500">
+        No courses found
+      </div>
+
+    )}
+
+  </div>
+);
+}
 export default ViewCourseInst;
+
+
