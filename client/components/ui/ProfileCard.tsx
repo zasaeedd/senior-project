@@ -159,6 +159,12 @@ const ProfileCard: React.FC = () => {
     fetchUser();
   }, []);
 
+  const totalXp = user?.student?.enrollments?.reduce(
+  (sum, e) => sum + (e.xp || 0),
+  0
+) ?? 0;
+
+
   if (loading) {
     return (
       <div className="bg-white/90 backdrop-blur p-5 rounded-2xl shadow-sm border">
@@ -214,7 +220,7 @@ const ProfileCard: React.FC = () => {
           <Image src="/assets/coins.png" alt="Coin" width={39} height={30} />
           <p className="text-xs text-slate-500">XP</p>
           <p className="font-semibold text-blue-600 text-lg">
-            {user.student?.enrollments?.[0]?.xp ?? 0}     
+            {totalXp}
           </p>
         </div>
       </div>

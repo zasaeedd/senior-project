@@ -605,6 +605,12 @@ const notCompletedQuizzes = coursesWithQuizzes.flatMap(c =>
   )
 );
 
+// Define weeklyQuizzes before your return()
+const weeklyQuizzes = coursesWithQuizzes
+  .flatMap(c => c.quizzes || [])
+  .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
+  .slice(0, 3);
+
 const pieChartData = {
   labels: ["Completed", "Pending", "Missed"],
   datasets: [{
@@ -637,12 +643,97 @@ return (
       <main className="flex-1 space-y-8">
 
         {/* Announcements */}
-        <section className="bg-white rounded-2xl shadow-sm p-6 border">
+        {/* <section className="bg-white rounded-2xl shadow-sm p-6 border">
           <h3 className="text-xl font-semibold mb-4">Announcements</h3>
           <div className="h-40 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400">
             No announcements yet
           </div>
-        </section>
+
+        </section> */}
+        {/* Weekly Tasks */}
+<section className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+  {/* Header */}
+  <div className="flex items-center justify-between mb-5">
+    <div>
+      <h3 className="text-xl font-semibold text-slate-800">
+        Weekly Tasks
+      </h3>
+
+      <p className="text-sm text-slate-500 mt-1">
+        Complete all quizzes to refresh your checklist
+      </p>
+    </div>
+
+    <div className="bg-blue-50 text-blue-600 text-sm font-semibold px-3 py-1 rounded-full">
+      {
+        weeklyQuizzes.filter(q =>
+          completedQuizzes.some(c => c.id === q.id)
+        ).length
+      }
+      /3 Done
+    </div>
+  </div>
+
+  {/* Checklist */}
+  <div className="space-y-3">
+    {weeklyQuizzes.map((q, index) => {
+      const isCompleted = completedQuizzes.some(c => c.id === q.id);
+
+      const courseName =
+        coursesWithQuizzes.find(course =>
+          course.quizzes?.some((quiz: Quiz) => quiz.id === q.id)
+        )?.courseName || "Unknown Course";
+
+      return (
+        <div
+          key={q.id}
+          className={`flex items-center gap-4 p-4 rounded-xl border transition-all
+            ${isCompleted
+              ? "bg-green-50 border-green-200"
+              : "bg-slate-50 border-slate-200 hover:border-blue-200"
+            }`}
+        >
+          {/* Checkbox */}
+          <div
+            className={`w-6 h-6 rounded-md flex items-center justify-center text-sm font-bold
+              ${isCompleted
+                ? "bg-green-500 text-white"
+                : "border-2 border-slate-300 bg-white"
+              }`}
+          >
+            {isCompleted ? "✓" : ""}
+          </div>
+
+          {/* Task Info */}
+          <div className="flex-1">
+            <p className={`font-medium ${isCompleted ? "text-green-700 line-through" : "text-slate-700"}`}>
+              {q.title}
+            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-full">
+                {courseName}
+              </span>
+              <span className="text-xs text-slate-400">
+                Quiz #{index + 1}
+              </span>
+            </div>
+          </div>
+
+          {/* Status */}
+          <div>
+            {isCompleted ? (
+              <span className="text-green-600 text-sm font-medium">Completed</span>
+            ) : (
+              <span className="text-amber-500 text-sm font-medium">Pending</span>
+            )}
+          </div>
+        </div>
+      );
+    })}
+  </div>
+</section>
+
+
 
         {/* Courses */}
         <section className="flex justify-between items-center">

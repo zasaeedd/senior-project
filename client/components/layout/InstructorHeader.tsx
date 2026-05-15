@@ -196,23 +196,6 @@ const InstructorHeader: React.FC = () => {
         {/* Actions */}
         <div className="flex items-center gap-3">
 
-          {/* Announcement */}
-          <button
-            className="
-              px-5
-              py-2.5
-              rounded-xl
-              border
-              border-blue-100
-              bg-blue-50
-              text-blue-600
-              font-medium
-              hover:bg-blue-100
-              transition
-            "
-          >
-            Send Announcement
-          </button>
 
           {/* Add Quiz */}
           <button
