@@ -1,0 +1,62 @@
+%%{init: {'theme':'base'}}%%
+usecaseDiagram
+actor Student as S
+actor Instructor as I
+actor SystemAdministrator as A
+actor System as SYS
+
+S --> (Register / Login)
+S --> (View Courses)
+S --> (Enroll in Section)
+S --> (Start Quiz)
+S --> (Use PowerUp)
+S --> (Submit Attempt)
+S --> (View Leaderboard)
+S --> (View Badges & XP)
+
+I --> (Login)
+I --> (Create Quiz)
+I --> (Edit Quiz)
+I --> (Publish Quiz)
+I --> (View Pending Attempts)
+I --> (Grade Attempt)
+I --> (View Analytics)
+I --> (View Instructor Leaderboard)
+
+A --> (Create Users)
+A --> (Create Courses)
+A --> (Create Sections)
+A --> (Assign Instructors)
+A --> (Seed Demo Data)
+A --> (View System Logs)
+
+(Submit Attempt) ..> (Auto-grade MCQs) : <<include>>
+(Grade Attempt) ..> (Update XP & Badges) : <<include>>
+(Auto-grade MCQs) ..> SYS
+(Update XP & Badges) ..> SYS
+(Use PowerUp) ..> SYS
+
+%% Grouping: system-level responsibilities
+rect rgb(240,240,255)
+  (Auto-grade MCQs)
+  (Update XP & Badges)
+  (Unlock PowerUps & Badges)
+end
+
+(Grade Attempt) ..> (Unlock PowerUps & Badges) : <<include>>
+(Unlock PowerUps & Badges) ..> SYS
+
+%% Notes
+note right of I
+  Instructor monitors:
+  - pending attempts
+  - analytics
+  - leaderboards
+end
+
+note right of A
+  Setup / maintenance role:
+  - bootstrap users, courses, sections
+  - inspect logs
+  - keep the system ready for instructors and students
+end

@@ -1,0 +1,114 @@
+%%{init: {'theme':'base'}}%%
+graph TD
+    Start([System Start]) --> Login{User Login}
+    
+    %% Student Path
+    Login -->|Student| StudentDash[Student Dashboard]
+    StudentDash --> ViewCourses[View Enrolled Courses]
+    ViewCourses --> SelectCourse[Select Course]
+    SelectCourse --> ViewQuizzes[View Available Quizzes]
+    ViewQuizzes --> CheckDeadline{Quiz Deadline<br/>Passed?}
+    
+    CheckDeadline -->|Yes| DeadlineMsg[Show: Quiz Expired]
+    DeadlineMsg --> ViewQuizzes
+    
+    CheckDeadline -->|No| CheckAttempts{Max Attempts<br/>Reached?}
+    CheckAttempts -->|Yes| AttemptsMsg[Show: No Attempts Left]
+    AttemptsMsg --> ViewQuizzes
+    
+    CheckAttempts -->|No| StartQuiz[Start Quiz Attempt]
+    StartQuiz --> CreateAttempt[Create Attempt Record]
+    CreateAttempt --> DisplayQuiz[Display Quiz Questions]
+    DisplayQuiz --> AnswerQuestions[Student Answers Questions]
+    AnswerQuestions --> SubmitQuiz[Submit Attempt]
+    SubmitQuiz --> AutoGradeMCQ{Any MCQ<br/>Questions?}
+    
+    AutoGradeMCQ -->|Yes| GradeMCQs[Auto-grade MCQs]
+    AutoGradeMCQs --> CheckWritten{Has Written<br/>Questions?}
+    
+    AutoGradeMCQ -->|No| CheckWritten
+    
+    CheckWritten -->|Yes| MarkPending[Mark Attempt as Pending]
+    MarkPending --> ShowScore[Show MCQ Score Only]
+    ShowScore --> PendingMsg[Show: Pending Manual Grading]
+    
+    CheckWritten -->|No| CalcFinalScore[Calculate Final Score]
+    CalcFinalScore --> MarkGraded[Mark Attempt as Graded]
+    MarkGraded --> UpdateXP[Update Student XP]
+    UpdateXP --> CheckBadges{Badge<br/>Conditions<br/>Met?}
+    
+    CheckBadges -->|Yes| UnlockBadges[Unlock Badges]
+    CheckBadges -->|No| CheckPowerUps
+    UnlockBadges --> CheckPowerUps{PowerUp<br/>Thresholds<br/>Met?}
+    
+    CheckPowerUps -->|Yes| UnlockPowerUps[Unlock PowerUps]
+    CheckPowerUps -->|No| ShowResult
+    UnlockPowerUps --> ShowResult[Show Final Score & Unlocked Items]
+    ShowResult --> ViewLeaderboard{View<br/>Leaderboard?}
+    
+    ViewLeaderboard -->|Yes| FetchLeaderboard[Fetch Latest Attempts<br/>Per Student]
+    FetchLeaderboard --> SortLeaderboard[Sort by Score then Speed]
+    SortLeaderboard --> DisplayLB[Display Ranked Leaderboard]
+    DisplayLB --> StudentEnd([Student Done])
+    
+    ViewLeaderboard -->|No| StudentEnd
+    PendingMsg --> StudentEnd
+    ShowScore --> ViewLeaderboard
+    
+    %% Instructor Path
+    Login -->|Instructor| InstDash[Instructor Dashboard]
+    InstDash --> InstChoice{Action?}
+    
+    InstChoice -->|Create Quiz| CreateQuiz[Create New Quiz]
+    CreateQuiz --> AddQuestions[Add Questions<br/>MCQ & Written]
+    AddQuestions --> SetDeadline[Set Deadline & Max Attempts]
+    SetDeadline --> PublishQuiz[Publish Quiz to Sections]
+    PublishQuiz --> AnalyticsView{View?}
+    
+    InstChoice -->|View Analytics| AnalyticsView
+    AnalyticsView -->|Yes| FetchAnalytics[Fetch Quiz Attempts<br/>for Section]
+    FetchAnalytics --> CalcAnalytics[Calculate Avg Score<br/>& Struggled Quiz]
+    CalcAnalytics --> DisplayAnalytics[Display Analytics Dashboard]
+    DisplayAnalytics --> AnalyticsEnd([Analytics Done])
+    
+    AnalyticsView -->|No, Back| InstDash
+    PublishQuiz --> InstDash
+    
+    InstChoice -->|Grade Pending| ViewPending[View Pending Quizzes]
+    ViewPending --> FetchPending[Fetch Ungraded Attempts<br/>with Written Q's]
+    FetchPending --> ListPending[Display Pending List]
+    ListPending --> SelectAttempt[Select Attempt to Grade]
+    SelectAttempt --> FetchAttemptDetails[Fetch Attempt Details<br/>& Student Answers]
+    FetchAttemptDetails --> DisplayAnswers[Display Written Answers]
+    DisplayAnswers --> EnterScores[Instructor Enters Scores<br/>for Written Answers]
+    EnterScores --> SaveGrades[Save Grades]
+    SaveGrades --> RecalcScore[Recalculate Total Score<br/>MCQ + Written]
+    RecalcScore --> MarkGradedFinal[Mark Attempt as Graded]
+    MarkGradedFinal --> CalcXPFinal[Calculate New XP<br/>for Student]
+    CalcXPFinal --> CheckBadgesFinal{Badge<br/>Conditions<br/>Met?}
+    
+    CheckBadgesFinal -->|Yes| UnlockBadgesFinal[Unlock Badges<br/>for Student]
+    CheckBadgesFinal -->|No| CheckPowerUpsFinal
+    UnlockBadgesFinal --> CheckPowerUpsFinal{PowerUp<br/>Thresholds<br/>Met?}
+    
+    CheckPowerUpsFinal -->|Yes| UnlockPowerUpsFinal[Unlock PowerUps<br/>for Student]
+    CheckPowerUpsFinal -->|No| ConfirmGrade
+    UnlockPowerUpsFinal --> ConfirmGrade[Show Grading Complete<br/>& Unlocked Items]
+    ConfirmGrade --> MoreGrading{More<br/>Attempts?}
+    
+    MoreGrading -->|Yes| ListPending
+    MoreGrading -->|No| InstEnd([Instructor Done])
+    
+    InstChoice -->|View Leaderboard| ViewInstLB[View Instructor Leaderboard]
+    ViewInstLB --> FetchInstLB[Fetch Graded Attempts<br/>for Section]
+    FetchInstLB --> KeepLatest[Keep Latest Attempt<br/>Per Student Per Quiz]
+    KeepLatest --> CalcAvgScore[Calculate Average Score<br/>Across Quizzes]
+    CalcAvgScore --> SortInstLB[Sort by Avg Score]
+    SortInstLB --> DisplayInstLB[Display Ranked Students]
+    DisplayInstLB --> InstEnd
+    
+    AnalyticsEnd --> InstDash
+    
+    %% System Notifications
+    MarkGradedFinal -.->|Notify| Notify["Send Notification<br/>Student: Attempt Graded!"]
+    Notify -.-> StudentEnd

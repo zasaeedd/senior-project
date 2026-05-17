@@ -1,0 +1,206 @@
+%%{init: {'theme':'base'}}%%
+classDiagram
+    class User {
+        + int userId
+        + string firstName
+        + string lastName
+        + string email
+        + string userName
+        + string password
+        + string role
+        ---
+        + login()
+        + getCurrentUser()
+        + register()
+    }
+
+    class Student {
+        + int id
+        + string major
+        + int userID
+        + Streak? streak
+        ---
+        + getStudentCourses()
+        + getStudentCoursesWithQuizzes()
+        + getCourseQuizzes()
+        + getCourseProgress()
+        + getStudentPerformance()
+    }
+
+    class Instructor {
+        + int id
+        + string department
+        + int userID
+        ---
+        + getInstructorCourses()
+        + getSectionDetails()
+        + getInstructorAnalytics()
+        + getUngradedAttempts()
+        + viewLeaderboardInst()
+    }
+
+    class Course {
+        + int id
+        + string crs_name
+        + string crs_code
+        + int credits
+        ---
+        + getCourseQuizzes()
+        + getStudentCourses()
+    }
+
+    class Section {
+        + int id
+        + int sectionNumber
+        + int total_std
+        + int courseID
+        + int instructorID
+        ---
+        + getInstructorSections()
+        + getSectionDetails()
+        + getInstructorAnalytics()
+    }
+
+    class Quiz {
+        + int id
+        + string title
+        + int duration
+        + DateTime deadline
+        + DateTime created_at
+        + string source_type
+        + int maxAttempts
+        + bool requiresManualGrading
+        + int courseID
+        + int userID
+        + int sectionID
+        ---
+        + createQuiz()
+        + getQuiz()
+        + startAttempt()
+        + submitAttempt()
+        + getCourseQuizzes()
+    }
+
+    class Question {
+        + int id
+        + string questionText
+        + string type
+        + int points
+        + int quizID
+        ---
+        + validateAnswer()
+    }
+
+    class Choice {
+        + int id
+        + string choiceText
+        + bool isCorrect
+        + int questionID
+    }
+
+    class Attempt {
+        + int id
+        + DateTime startedAt
+        + DateTime submittedAt
+        + float score
+        + bool isGraded
+        + bool requiresManualGrading
+        + int studentID
+        + int quizID
+        + float earnedXP
+        + DateTime earnedAt
+        + bool is_active
+        ---
+        + startAttempt()
+        + submitAttempt()
+        + getAttemptDetails()
+        + gradeAttempt()
+        + viewLeaderboard()
+        + viewLeaderboardInst()
+    }
+
+    class StudentAnswer {
+        + int id
+        + int? selectedAnswerId
+        + string? studentAnswerText
+        + float? score
+        + int attemptID
+        + int questionID
+        ---
+        + submitAnswer()
+        + getAttemptDetails()
+    }
+
+    class Badge {
+        + int id
+        + string name
+        + string criteria
+        + string imageUrl
+        ---
+        + checkUnlockCondition()
+        + unlockForStudent()
+    }
+
+    class StudentBadge {
+        + int id
+        + int studentID
+        + int badgeID
+        + DateTime earnedAt
+    }
+
+    class PowerUp {
+        + int id
+        + string name
+        + int cost
+        + string imageUrl
+        ---
+        + usePowerUp()
+        + checkThreshold()
+    }
+
+    class StudentPowerUp {
+        + int id
+        + int studentID
+        + int powerupID
+        + int quantity
+    }
+
+    class Enrollment {
+        + int id
+        + int studentID
+        + int sectionID
+        + DateTime enrollmentDate
+    }
+
+    class Streak {
+        + int id
+        + int studentID
+        + int currentStreak
+        + int longestStreak
+        ---
+        + updateStreak()
+        + resetStreak()
+    }
+
+
+    %% Relationships
+    User "1" -- "0..1" Student : has
+    User "1" -- "0..1" Instructor : has
+    Student "many" -- "many" Course : enrolls
+    Student "1" -- "many" Attempt : submits
+    Student "1" -- "many" StudentBadge : earns
+    Student "1" -- "many" StudentPowerUp : unlocks
+    Student "1" -- "0..1" Streak : tracks
+    Instructor "1" -- "many" Section : teaches
+    Section "many" -- "many" Course : contains
+    Course "1" -- "many" Quiz : has
+    Quiz "1" -- "many" Question : contains
+    Quiz "1" -- "many" Attempt : evaluates
+    Question "1" -- "many" Choice : has
+    Question "1" -- "many" StudentAnswer : grades
+    Attempt "1" -- "many" StudentAnswer : contains
+    Badge "1" -- "many" StudentBadge : awarded
+    PowerUp "1" -- "many" StudentPowerUp : unlocked
+    Section "1" -- "many" Enrollment : has
+    Enrollment "many" -- "1" Student : links
+    Enrollment "many" -- "1" Section : links

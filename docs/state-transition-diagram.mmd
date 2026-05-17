@@ -1,0 +1,56 @@
+%%{init: {'theme':'base'}}%%
+stateDiagram-v2
+    %% ===== ATTEMPT LIFECYCLE =====
+    [*] --> NotStarted: Create Attempt Record
+    
+    NotStarted --> Started: Student Clicks "Start Quiz"
+    Started --> Submitted: Student Submits Attempt
+    
+    Submitted --> CheckQuestionType: System Checks\nQuestion Types
+    
+    CheckQuestionType --> OnlyMCQ: Only MCQ\nQuestions
+    CheckQuestionType --> HasWritten: Has Written\nQuestions
+    
+    OnlyMCQ --> AutoGraded: Auto-grade MCQs\nCalc Final Score
+    AutoGraded --> Graded: Mark isGraded=true
+    
+    HasWritten --> PendingGrading: Mark as Pending\nManual Grading
+    PendingGrading --> InstructorReview: Instructor Grades\nWritten Answers
+    InstructorReview --> Graded: Mark isGraded=true
+    
+    Graded --> CalcXP: Calculate XP\nfor Student
+    CalcXP --> CheckBadgeUnlock: Check Badge\nConditions
+    CheckBadgeUnlock --> BadgeUnlocked: Unlock Badges\nif Thresholds Met
+    BadgeUnlocked --> CheckPowerUpUnlock
+    
+    CheckBadgeUnlock --> CheckPowerUpUnlock: No Badges\nUnlocked
+    CheckPowerUpUnlock --> PowerUpUnlocked: Unlock PowerUps\nif XP Thresholds Met
+    PowerUpUnlocked --> Completed
+    
+    CheckPowerUpUnlock --> Completed: No PowerUps\nUnlocked
+    Completed --> [*]
+    
+    %% ===== QUIZ LIFECYCLE =====
+    [*] --> Draft: Instructor Creates\nQuiz
+    
+    Draft --> Editing: Edit Questions\n& Settings
+    Editing --> Draft
+    
+    Draft --> Published: Instructor\nPublishes Quiz
+    Published --> Active: Deadline Not\nPassed Yet
+    
+    Active --> QuizInProgress: Student Can\nStart Attempt
+    QuizInProgress --> Active
+    
+    Active --> Expired: Deadline\nPassed
+    Expired --> Closed: Quiz Closed\nNo More Attempts
+
+    
+    %% ===== GAMIFICATION UNLOCKS (After Grading) =====
+    Completed --> GamificationCheck: Check XP
+    GamificationCheck --> XPCalculated: XP Updated
+    XPCalculated --> PowerUpCheck: Check PowerUp Thresholds
+    PowerUpCheck --> PowerUpUnlocked: PowerUps Unlocked
+    PowerUpUnlocked --> BadgeCheck: Check Badge Conditions
+    BadgeCheck --> BadgesUnlocked: Badges Unlocked
+    BadgesUnlocked --> [*]
