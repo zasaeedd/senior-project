@@ -9,7 +9,8 @@ const prisma = new PrismaClient({
 
 async function main() {
   // Example query: list all users
-  const users = await prisma.user.findMany();
+  // const users = await prisma.user.findMany();
+    const users = await prisma.appUser.findMany();
   console.log(users);
 }
 

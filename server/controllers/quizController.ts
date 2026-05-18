@@ -11,37 +11,48 @@ export const createQuiz = async (req: Request, res: Response) => {
     }
 
     // get quiz info from request's body sent from frontend
-    const { title, duration, maxAttempts,deadline, courseCode, sectionNumbers, questions } =
-      req.body;
+    const {
+      title,
+      duration,
+      maxAttempts,
+      deadline,
+      courseCode,
+      sectionNumbers,
+      questions,
+    } = req.body;
 
     if (!title || !duration || !deadline || !courseCode || !sectionNumbers) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "Missing required fields: title, duration, maxAttempts, deadline, courseID, sectionID",
-        });
+      return res.status(400).json({
+        message:
+          "Missing required fields: title, duration, maxAttempts, deadline, courseID, sectionID",
+      });
     }
     if (!Array.isArray(sectionNumbers) || sectionNumbers.length === 0) {
-  return res.status(400).json({ message: "At least one section must be selected" });
-} 
-    const sectionNumbersInt = sectionNumbers.map((num: string | number) => parseInt(num as string, 10));
+      return res
+        .status(400)
+        .json({ message: "At least one section must be selected" });
+    }
+    const sectionNumbersInt = sectionNumbers.map((num: string | number) =>
+      parseInt(num as string, 10),
+    );
 
     const course = await prisma.course.findUnique({
-      where: { crs_code: courseCode }
+      where: { crs_code: courseCode },
     });
     if (!course) {
       return res.status(404).json({ message: "Course not found" });
     }
 
     const sections = await prisma.section.findMany({
-    where: {
-      courseID: course.id,
-      sectionNumber: {in: sectionNumbersInt},
-      }
+      where: {
+        courseID: course.id,
+        sectionNumber: { in: sectionNumbersInt },
+      },
     });
     if (sections.length !== sectionNumbersInt.length) {
-      return res.status(404).json({ message: "One or more sections are not found" });
+      return res
+        .status(404)
+        .json({ message: "One or more sections are not found" });
     }
 
     if (!Array.isArray(questions) || questions.length === 0) {
@@ -71,31 +82,40 @@ export const createQuiz = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Sections not found" });
     }
 
-    for(const section of sections) {
+    for (const section of sections) {
       if (section.instructorID !== creator.instructor.id) {
-      return res
-        .status(403)
-        .json({ message:  `You can only create quizzes for your own sections (failed at section ${section.sectionNumber} ` });
-    }
+        return res
+          .status(403)
+          .json({
+            message: `You can only create quizzes for your own sections (failed at section ${section.sectionNumber} `,
+          });
+      }
 
-    if (section.courseID !== course.id) {
-      return res
-        .status(400)
-        .json({
-          message:  `section ${section.sectionNumber} does not belong to the provided courseID `,
+      if (section.courseID !== course.id) {
+        return res.status(400).json({
+          message: `section ${section.sectionNumber} does not belong to the provided courseID `,
         });
+      }
     }
-    }
-   
-
 
     // validate questions before saving them to the database
     const validatedQuestions = questions.map((q: any, index: number) => {
-      if (!q.text || !q.type || !q.points || !q.difficulty) {
-        throw new Error(`Questions ${index + 1} is missing required fields`);
+      const text = typeof q.text === "string" ? q.text.trim() : "";
+      const type = String(q.type || "").toLowerCase();
+      const points = Number(q.points);
+      const difficulty =
+        typeof q.difficulty === "string" ? q.difficulty.trim() : "";
+
+      if (
+        !text ||
+        !type ||
+        Number.isNaN(points) ||
+        points <= 0 ||
+        !difficulty
+      ) {
+        throw new Error(`Question ${index + 1} is missing required fields`);
       }
 
-      const type = String(q.type).toLowerCase();
       if (type !== "mcq" && type !== "written") {
         throw new Error(
           `Question ${index + 1} has unsupported type. Use 'mcq' or 'written'`,
@@ -110,11 +130,11 @@ export const createQuiz = async (req: Request, res: Response) => {
         }
 
         const allChoicesHaveText = q.choices.every(
-          (c: any) => c.text && c.text.trim() !== ""
+          (c: any) => c.text && c.text.trim() !== "",
         );
-        if (!allChoicesHaveText){
+        if (!allChoicesHaveText) {
           throw new Error(
-            `MCQ Question ${index +1} has empty choice input. All choices must be filled in.`
+            `MCQ Question ${index + 1} has empty choice input. All choices must be filled in.`,
           );
         }
 
@@ -140,10 +160,10 @@ export const createQuiz = async (req: Request, res: Response) => {
 
       // shared question fields for both q types
       const baseQuestion = {
-        text: q.text,
+        text,
         type,
-        points: Number(q.points),
-        difficulty: q.difficulty,
+        points,
+        difficulty,
       };
 
       // add choices for mcq questions
@@ -163,43 +183,43 @@ export const createQuiz = async (req: Request, res: Response) => {
     });
 
     const hasWrittenQuestions = validatedQuestions.some(
-    (q: any) => q.type === "written"
+      (q: any) => q.type === "written",
     );
 
-    // create quiz database record 
+    // create quiz database record
     const createdQuizzes = [];
     for (const section of sections) {
-         const quiz = await prisma.quiz.create({
-      data: {
-        title,
-        duration: Number(duration),
-        maxAttempts: maxAttempts ?? 1,
-        deadline: parsedDeadline,
-        created_at: new Date(),
-        source_type: "manual",
-        courseID: course.id,
-        sectionID: section.id,
-        userID: creator.userId,
-        requiresManualGrading: hasWrittenQuestions,
-        questions: {
-          create: validatedQuestions,
-        },
-      },
-      include: {
-        questions: {
-          include: {
-            choices: true,
+      const quiz = await prisma.quiz.create({
+        data: {
+          title,
+          duration: Number(duration),
+          maxAttempts: maxAttempts ?? 1,
+          deadline: parsedDeadline,
+          created_at: new Date(),
+          source_type: "manual",
+          courseID: course.id,
+          sectionID: section.id,
+          userID: creator.userId,
+          requiresManualGrading: hasWrittenQuestions,
+          questions: {
+            create: validatedQuestions,
           },
         },
-      },
-    });
+        include: {
+          questions: {
+            include: {
+              choices: true,
+            },
+          },
+        },
+      });
 
-   createdQuizzes.push(quiz);
+      createdQuizzes.push(quiz);
     }
-   return res.status(201).json({
-          message: "Quiz created successfully",
-          quizzes: createdQuizzes,
-        });
+    return res.status(201).json({
+      message: "Quiz created successfully",
+      quizzes: createdQuizzes,
+    });
   } catch (err: any) {
     if (err.message?.includes("Question")) {
       return res.status(400).json({ message: err.message });
@@ -209,17 +229,6 @@ export const createQuiz = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
-
-
-
-
-
-
-
-
-
-
 
 export const getInstructorSections = async (req: Request, res: Response) => {
   try {
@@ -231,9 +240,10 @@ export const getInstructorSections = async (req: Request, res: Response) => {
       include: { section: { include: { course: true } } }, // matches schema
     });
 
-    if (!instructor) return res.status(404).json({ message: "Instructor not found" });
+    if (!instructor)
+      return res.status(404).json({ message: "Instructor not found" });
 
-    const data = (instructor.section || []).map(section => ({
+    const data = (instructor.section || []).map((section) => ({
       sectionId: section.id,
       sectionNumber: section.sectionNumber,
       courseId: section.course.id,
@@ -248,19 +258,12 @@ export const getInstructorSections = async (req: Request, res: Response) => {
   }
 };
 
-
-
-
-
-
-
 export const getQuiz = async (req: Request, res: Response) => {
   try {
     const courseId = Number(req.params.courseId);
 
     const userId = req.userId;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
-
 
     const quizId = Number(req.params.quizId);
     if (!quizId || Number.isNaN(quizId)) {
@@ -271,26 +274,31 @@ export const getQuiz = async (req: Request, res: Response) => {
       where: { userId: parseInt(userId) },
       include: { student: true },
     });
-    if (!studentUser || studentUser.role !== "student" || !studentUser.student) {
-      return res.status(403).json({ message: "Only students can retrieve quiz details" });
+    if (
+      !studentUser ||
+      studentUser.role !== "student" ||
+      !studentUser.student
+    ) {
+      return res
+        .status(403)
+        .json({ message: "Only students can retrieve quiz details" });
     }
 
     const studentID = studentUser.student.id;
 
     console.log("quizId:", quizId, "courseId:", courseId);
 
-
-const sectionId = Number(req.params.sectionId);
-
+    const sectionId = Number(req.params.sectionId);
 
     const quiz = await prisma.quiz.findFirst({
-      where: { id: quizId, courseID : courseId},
+      where: { id: quizId, courseID: courseId },
       include: {
         questions: {
-          include: { 
-            choices: { select: { id: true, text: true } } },
+          include: {
+            choices: { select: { id: true, text: true } },
+          },
         },
-        attempts:true,
+        attempts: true,
       },
     });
     console.log("req.params:", req.params);
@@ -298,8 +306,8 @@ const sectionId = Number(req.params.sectionId);
     if (!quiz) return res.status(404).json({ message: "Quiz not found" });
 
     if (quiz.courseID !== courseId) {
-  return res.status(404).json({ message: "Quiz not found in this course" });
-}
+      return res.status(404).json({ message: "Quiz not found in this course" });
+    }
     const enrollment = await prisma.enrollment.findUnique({
       where: {
         studentID_sectionID: {
@@ -309,7 +317,9 @@ const sectionId = Number(req.params.sectionId);
       },
     });
     if (!enrollment) {
-      return res.status(403).json({ message: "You are not enrolled in this quiz section" });
+      return res
+        .status(403)
+        .json({ message: "You are not enrolled in this quiz section" });
     }
 
     const attempt = await prisma.attempt.findFirst({
@@ -320,76 +330,61 @@ const sectionId = Number(req.params.sectionId);
       include: { studentAnswers: true },
     });
 
-    
+    const unlockedPowerUps = await prisma.studentPowerUp.findMany({
+      where: { studentID },
+      include: { powerup: true }, // make sure 'powerup' has a 'name'
+    });
 
-const unlockedPowerUps = await prisma.studentPowerUp.findMany({
-  where: { studentID },
-  include: { powerup: true } // make sure 'powerup' has a 'name'
-});
-
-return res.status(200).json({
-  message: "Quiz retrieved successfully",
-  quiz,
-  attempt: attempt || null,
-unlockedPowerUps: unlockedPowerUps.map(up => ({
-  id: up.powerup.id,
-  name: up.powerup.name.replace("/", "-"), // normalize
-  quantity: up.quantity
-}))
-
-});
-
-
-
- 
+    return res.status(200).json({
+      message: "Quiz retrieved successfully",
+      quiz,
+      attempt: attempt || null,
+      unlockedPowerUps: unlockedPowerUps.map((up) => ({
+        id: up.powerup.id,
+        name: up.powerup.name.replace("/", "-"), // normalize
+        quantity: up.quantity,
+      })),
+    });
   } catch (err) {
     console.error("Error retrieving quiz: ", err);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
-
-
-
-
-
-
-
 export const startAttempt = async (req: Request, res: Response) => {
   try {
-    console.log("Incoming startAttempt request body:", req.body);  
-    console.log("req.userId:", req.userId); 
+    console.log("Incoming startAttempt request body:", req.body);
+    console.log("req.userId:", req.userId);
     const userId = req.userId;
-    const { quizID, } = req.body;
+    const { quizID } = req.body;
 
-        const studentUser = await prisma.appUser.findUnique({
+    const studentUser = await prisma.appUser.findUnique({
       where: { userId: Number(userId) },
-      include: {student: true}
-    }
-  );
+      include: { student: true },
+    });
     if (!studentUser || !studentUser.student) {
-      return res.status(404).json({ message: "Only students can access this resource" });
+      return res
+        .status(404)
+        .json({ message: "Only students can access this resource" });
     }
 
     const studentId = studentUser.student.id;
-      console.log("Resolved studentId:", studentId);
+    console.log("Resolved studentId:", studentId);
 
-      const quiz = await prisma.quiz.findUnique({
-        where: { id: quizID},
+    const quiz = await prisma.quiz.findUnique({
+      where: { id: quizID },
+    });
+    if (!quiz) return res.status(404).json({ message: "Quiz not found" });
+
+    if (quiz.maxAttempts !== null) {
+      const existingAttempts = await prisma.attempt.count({
+        where: { quizID: Number(quizID), studentID: studentId },
       });
-      if (!quiz) return res.status(404).json({ message: "Quiz not found"});
 
-        if (quiz.maxAttempts !== null){
-          const existingAttempts = await prisma.attempt.count({
-            where: {quizID: Number(quizID), studentID: studentId},
-        });
-      
-
-          if (existingAttempts >= quiz.maxAttempts){
-            return res.status(403).json({ message: "Maximum attempts reached"});
-          }
-
-        }
+      if (existingAttempts >= quiz.maxAttempts) {
+        return res.status(403).json({ message: "Maximum attempts reached" });
+      }
+    }
 
     const attempt = await prisma.attempt.create({
       data: {
@@ -399,10 +394,11 @@ export const startAttempt = async (req: Request, res: Response) => {
       },
     });
 
-    res.json({ attemptId: attempt.id,
-              quizId: quiz.id,
-              duration: quiz.duration,
-              deadline: quiz.deadline,
+    res.json({
+      attemptId: attempt.id,
+      quizId: quiz.id,
+      duration: quiz.duration,
+      deadline: quiz.deadline,
     });
     console.log("Created attempt:", attempt);
   } catch (err) {
@@ -410,12 +406,6 @@ export const startAttempt = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
-
-
-
-
-
 
 // export const submitAttempt = async (req: Request, res: Response) => {
 //   try {
@@ -427,7 +417,7 @@ export const startAttempt = async (req: Request, res: Response) => {
 //       where: { id: Number(quizId) },
 //       include: { questions: { include: { choices: true } } },
 //     });
-    
+
 //     const requiresManualGrading = quiz?.requiresManualGrading ?? false;
 
 //     if (!quiz) {
@@ -502,13 +492,6 @@ export const startAttempt = async (req: Request, res: Response) => {
 //   }
 // };
 
-
-
-
-
-
-
-
 export const submitAttempt = async (req: Request, res: Response) => {
   try {
     const userId = req.userId;
@@ -516,7 +499,6 @@ export const submitAttempt = async (req: Request, res: Response) => {
 
     const { attemptId, quizId, answers } = req.body;
 
-    
     const quiz = await prisma.quiz.findUnique({
       where: { id: Number(quizId) },
       include: { questions: { include: { choices: true } } },
@@ -528,24 +510,32 @@ export const submitAttempt = async (req: Request, res: Response) => {
 
     const requiresManualGrading = quiz.requiresManualGrading ?? false;
 
-    let earnedPoints = 0;   // points earned from auto‑graded MCQs
+    let earnedPoints = 0; // points earned from auto‑graded MCQs
     let possiblePoints = 0; // total possible points (MCQ + written)
 
     const studentAnswersData = Object.entries(answers)
       .map(([questionId, choiceOrText]) => {
-        const question = quiz.questions.find(q => q.id === Number(questionId));
+        const question = quiz.questions.find(
+          (q) => q.id === Number(questionId),
+        );
         if (!question) return null;
 
         // always add question points to possible total
         possiblePoints += question.points;
 
-        const correctChoice = question.choices.find(c => c.is_correct);
+        const correctChoice = question.choices.find((c) => c.is_correct);
         let isCorrect = false;
 
-        if (question.type.toLowerCase() === "mcq" && typeof choiceOrText === "number") {
+        if (
+          question.type.toLowerCase() === "mcq" &&
+          typeof choiceOrText === "number"
+        ) {
           isCorrect = choiceOrText === correctChoice?.id;
           if (isCorrect) earnedPoints += question.points;
-        } else if (question.type.toLowerCase() === "written" && typeof choiceOrText === "string") {
+        } else if (
+          question.type.toLowerCase() === "written" &&
+          typeof choiceOrText === "string"
+        ) {
           // written answers are stored but not graded yet
           if (choiceOrText.trim() !== "") {
             isCorrect = false;
@@ -554,7 +544,8 @@ export const submitAttempt = async (req: Request, res: Response) => {
 
         return {
           question: { connect: { id: Number(questionId) } },
-          short_text_ans: typeof choiceOrText === "string" ? choiceOrText : null,
+          short_text_ans:
+            typeof choiceOrText === "string" ? choiceOrText : null,
           is_correct: isCorrect,
           time_taken: 0,
           feedback: "",
@@ -579,7 +570,7 @@ export const submitAttempt = async (req: Request, res: Response) => {
     const updatedAttempt = await prisma.attempt.update({
       where: { id: Number(attemptId) },
       data: {
-        score,                  // earned MCQ points only
+        score, // earned MCQ points only
         points: possiblePoints, // total possible points (MCQ + written)
         totalPoints: possiblePoints,
         end_time: new Date(),
@@ -593,28 +584,31 @@ export const submitAttempt = async (req: Request, res: Response) => {
     console.log("Updated attempt:", updatedAttempt);
 
     const durationSeconds =
-      (updatedAttempt.end_time!.getTime() - updatedAttempt.start_time.getTime()) / 1000;
+      (updatedAttempt.end_time!.getTime() -
+        updatedAttempt.start_time.getTime()) /
+      1000;
 
-      // get the studentID
-      const studentUser = await prisma.appUser.findUnique({
-          where: { userId: Number(userId) },
-          include: { student: true },
-        });
+    // get the studentID
+    const studentUser = await prisma.appUser.findUnique({
+      where: { userId: Number(userId) },
+      include: { student: true },
+    });
 
-        if (!studentUser || !studentUser.student) {
-          return res.status(404).json({ message: "Only students can submit attempts" });
-        }
+    if (!studentUser || !studentUser.student) {
+      return res
+        .status(404)
+        .json({ message: "Only students can submit attempts" });
+    }
 
-        const studentId = studentUser.student.id;
+    const studentId = studentUser.student.id;
 
-      const submittedAttemptsCount = await prisma.attempt.count({
-        where: {
-          quizID: Number(quizId),
-          studentID: studentId,
-          submitted_at: { not: null }, // only submitted ones
-        },
-      });
-
+    const submittedAttemptsCount = await prisma.attempt.count({
+      where: {
+        quizID: Number(quizId),
+        studentID: studentId,
+        submitted_at: { not: null }, // only submitted ones
+      },
+    });
 
     res.json({ ...updatedAttempt, duration: durationSeconds });
   } catch (err) {
@@ -623,19 +617,12 @@ export const submitAttempt = async (req: Request, res: Response) => {
   }
 };
 
-
-
-
-
-
-
-
 // ------- leaderboard for student
 
 // export const viewLeaderboard = async (req: Request, res: Response) => {
 //   try {
 //     const { quizId, courseId } = req.params;
-//     const userId = req.userId; 
+//     const userId = req.userId;
 
 //     if (!userId) {
 //       return res.status(401).json({ message: "Unauthorized" });
@@ -659,7 +646,7 @@ export const submitAttempt = async (req: Request, res: Response) => {
 //       },
 //       include: {
 //         quiz: {
-//           include: { questions: true }, 
+//           include: { questions: true },
 //         },
 //         student: {
 //           include: {
@@ -711,7 +698,7 @@ export const submitAttempt = async (req: Request, res: Response) => {
 //             ? a.end_time.getTime() - a.start_time.getTime()
 //             : 0;
 
-//         const earnedPoints = a.score ?? 0; 
+//         const earnedPoints = a.score ?? 0;
 //         const totalPoints = a.quiz.questions.reduce(
 //           (sum, q) => sum + (q.points ?? 0),
 //           0
@@ -755,11 +742,10 @@ export const submitAttempt = async (req: Request, res: Response) => {
 //   }
 // };
 
-
 export const viewLeaderboard = async (req: Request, res: Response) => {
   try {
     const { quizId, courseId } = req.params;
-    const userId = req.userId; 
+    const userId = req.userId;
 
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
@@ -779,7 +765,9 @@ export const viewLeaderboard = async (req: Request, res: Response) => {
     });
 
     if (!student) {
-      return res.status(403).json({ message: "Only students can view leaderboard" });
+      return res
+        .status(403)
+        .json({ message: "Only students can view leaderboard" });
     }
 
     const attempts = await prisma.attempt.findMany({
@@ -806,11 +794,11 @@ export const viewLeaderboard = async (req: Request, res: Response) => {
 
     const filteredAttempts = attempts.filter((a) =>
       a.student.enrollments.some(
-        (enrollment) => enrollment.section.course.id === Number(courseId)
-      )
+        (enrollment) => enrollment.section.course.id === Number(courseId),
+      ),
     );
 
-    const latestAttemptsMap = new Map<number, typeof filteredAttempts[0]>();
+    const latestAttemptsMap = new Map<number, (typeof filteredAttempts)[0]>();
     for (const attempt of filteredAttempts) {
       if (!latestAttemptsMap.has(attempt.student.id)) {
         latestAttemptsMap.set(attempt.student.id, attempt);
@@ -837,7 +825,7 @@ export const viewLeaderboard = async (req: Request, res: Response) => {
         const earnedPoints = a.score ?? 0;
         const totalPoints = a.quiz.questions.reduce(
           (sum, q) => sum + (q.points ?? 0),
-          0
+          0,
         );
 
         const percentage =
@@ -846,7 +834,7 @@ export const viewLeaderboard = async (req: Request, res: Response) => {
         // Pull XP from enrollment (adjust if stored differently)
         const xp =
           a.student.enrollments.length > 0
-            ? a.student.enrollments[0]?.xp ?? 0
+            ? (a.student.enrollments[0]?.xp ?? 0)
             : 0;
 
         return {
@@ -875,16 +863,10 @@ export const viewLeaderboard = async (req: Request, res: Response) => {
   }
 };
 
-
-
-
-
-
-
-export const usePowerUp = async ( req: Request, res: Response) => {
+export const usePowerUp = async (req: Request, res: Response) => {
   try {
     const quizId = Number(req.params.quizId);
-     const userId = req.userId; 
+    const userId = req.userId;
 
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
@@ -897,14 +879,18 @@ export const usePowerUp = async ( req: Request, res: Response) => {
 
     // If not a student, block
     if (!student) {
-      return res.status(403).json({ message: "Only students can view leaderboard" });
+      return res
+        .status(403)
+        .json({ message: "Only students can view leaderboard" });
     }
 
     const studentId = student.id;
 
-    const {powerupId, questionId} = req.body;
+    const { powerupId, questionId } = req.body;
     const inventory = await prisma.studentPowerUp.findUnique({
-      where: { studentID_powerupID: { studentID: studentId, powerupID: powerupId } }
+      where: {
+        studentID_powerupID: { studentID: studentId, powerupID: powerupId },
+      },
     });
 
     if (!inventory || inventory.quantity <= 0) {
@@ -919,7 +905,7 @@ export const usePowerUp = async ( req: Request, res: Response) => {
         // Extend quiz timer by +60 seconds
         await prisma.attempt.updateMany({
           where: { studentID: studentId, quizID: quizId, isGraded: false },
-          data: { extraTime: { increment: 60 } }
+          data: { extraTime: { increment: 60 } },
         });
         effectPayload = { type: "Extra Time", addedSeconds: 60 };
         break;
@@ -930,52 +916,55 @@ export const usePowerUp = async ( req: Request, res: Response) => {
         break;
 
       case 3: // 50/50
-  if (!questionId) {
-    return res.status(400).json({ message: "Question ID required for 50/50" });
-  }
+        if (!questionId) {
+          return res
+            .status(400)
+            .json({ message: "Question ID required for 50/50" });
+        }
 
-  const question = await prisma.question.findUnique({
-    where: { id: questionId },
-    include: { choices: true }
-  });
-  if (!question) return res.status(404).json({ message: "Question not found" });
+        const question = await prisma.question.findUnique({
+          where: { id: questionId },
+          include: { choices: true },
+        });
+        if (!question)
+          return res.status(404).json({ message: "Question not found" });
 
-  const wrongOptions = question.choices.filter(c => !c.is_correct);
+        const wrongOptions = question.choices.filter((c) => !c.is_correct);
 
-  let toRemove: typeof wrongOptions = [];
+        let toRemove: typeof wrongOptions = [];
 
-  if (question.choices.length === 4) {
-    // remove 2 wrong choices
-    toRemove = wrongOptions.sort(() => 0.5 - Math.random()).slice(0, 2);
-  } else if (question.choices.length === 3) {
-    // remove 1 wrong choice
-    toRemove = wrongOptions.sort(() => 0.5 - Math.random()).slice(0, 1);
-  } else if (question.choices.length === 2) {
-    // don’t remove anything, don’t decrement inventory
-    return res.json({
-      message: "Cannot use 50/50 on 2-choice questions",
-      effect: { type: "50/50", removedChoices: [] }
-    });
-  }
+        if (question.choices.length === 4) {
+          // remove 2 wrong choices
+          toRemove = wrongOptions.sort(() => 0.5 - Math.random()).slice(0, 2);
+        } else if (question.choices.length === 3) {
+          // remove 1 wrong choice
+          toRemove = wrongOptions.sort(() => 0.5 - Math.random()).slice(0, 1);
+        } else if (question.choices.length === 2) {
+          // don’t remove anything, don’t decrement inventory
+          return res.json({
+            message: "Cannot use 50/50 on 2-choice questions",
+            effect: { type: "50/50", removedChoices: [] },
+          });
+        }
 
-  const removedChoices = toRemove.map(o => o.id);
-  console.log("50/50 effect removing choices:", removedChoices);
+        const removedChoices = toRemove.map((o) => o.id);
+        console.log("50/50 effect removing choices:", removedChoices);
 
-  effectPayload = { type: "50/50", removedChoices };
-  
-  // Decrement inventory only if we didn’t return early
-await prisma.studentPowerUp.update({
-  where: { studentID_powerupID: { studentID: studentId, powerupID: powerupId } },
-  data: { quantity: { decrement: 1 } }
-});
-  break;
+        effectPayload = { type: "50/50", removedChoices };
 
+        // Decrement inventory only if we didn’t return early
+        await prisma.studentPowerUp.update({
+          where: {
+            studentID_powerupID: { studentID: studentId, powerupID: powerupId },
+          },
+          data: { quantity: { decrement: 1 } },
+        });
+        break;
     }
-
 
     return res.json({
       message: `PowerUp used successfully`,
-      effect: effectPayload
+      effect: effectPayload,
     });
   } catch (err) {
     console.error("Error using PowerUp:", err);
